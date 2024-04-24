@@ -1,8 +1,10 @@
 {
+  "publisher": "xiaochi",
   "name": "copyfiles",
   "displayName": "copyfiles",
   "description": "copy files' name and content",
   "version": "0.0.1",
+  "repository": "https://github.com/picasso250/vscode-copyfiles",
   "engines": {
     "vscode": "^1.88.0"
   },
