@@ -12,10 +12,18 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "copyfiles.copyFileNamesAndContent"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "copyfiles.helloWorld",
-        "title": "Hello World"
+        "command": "copyfiles.copyFileNamesAndContent",
+        "title": "Copy file name and content",
+        "category": "Explorer"
       }
     ]
   },
