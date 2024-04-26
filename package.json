@@ -24,12 +24,16 @@
     "commands": [
       {
         "command": "copyfiles.copyFileNamesAndContent",
-        "title": "Copy file name and content",
+        "title": "Copy File Name And Content",
         "category": "Explorer"
       }
       ,{
         "command": "copyfiles.copyOneFile",
-        "title": "Copy this file name and content"
+        "title": "Copy This File Name And Content"
+      }
+      ,{
+        "command": "copyfiles.copySelectedText",
+        "title": "Copy Seleted Text"
       }
     ]
   },

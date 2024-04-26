@@ -31,12 +31,35 @@ export function activate(context: vscode.ExtensionContext) {
 
         let fileName = path.basename(editor.document.fileName);
         let fileContent = editor.document.getText();
-        let clipboardContent = `File: \`${fileName}\`\n\`\`\`\n${fileContent}\n\`\`\``;
+        let clipboardContent = `File: \`${fileName}\`\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
 
         vscode.env.clipboard.writeText(clipboardContent);
 
         vscode.window.showInformationMessage('Copied one file to clipboard.');
     });
+
+    let copySelectedTextDisposable = vscode.commands.registerCommand('copyfiles.copySelectedText', () => {
+        let editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage('No active editor.');
+            return;
+        }
+    
+        let selection = editor.selection;
+        if (selection.isEmpty) {
+            vscode.window.showErrorMessage('No text selected.');
+            return;
+        }
+    
+        let selectedText = editor.document.getText(selection);
+        let clipboardContent = `\`\`\`\n${selectedText}\n\`\`\`\n\n`;
+    
+        vscode.env.clipboard.writeText(clipboardContent);
+    
+        vscode.window.showInformationMessage('Copied selected text to clipboard.');
+    });
+    
+    context.subscriptions.push(copySelectedTextDisposable);    
 
     context.subscriptions.push(copyFileNamesAndContentDisposable, copyOneFileDisposable);
 }
