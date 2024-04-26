@@ -1,15 +1,16 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
-    let disposable = vscode.commands.registerCommand('copyfiles.copyFileNamesAndContent', (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
+    let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('copyfiles.copyFileNamesAndContent', (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
         if (!selectedFiles.some(fileUri => fileUri.path === currentFile.path)) {
             selectedFiles = [currentFile];
         }
 
         let clipboardContent: string[] = [];
         selectedFiles.forEach((fileUri: vscode.Uri) => {
-            let fileName = fileUri.path.substring(fileUri.path.lastIndexOf('/') + 1);
+            let fileName = path.basename(fileUri.fsPath);
             let fileContent = fs.readFileSync(fileUri.fsPath, 'utf-8');
             clipboardContent.push(`File: \`${fileName}\`\n\`\`\`\n${fileContent}\n\`\`\`` + '\n\n');
         });
@@ -21,7 +22,23 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(message);
     });
 
-    context.subscriptions.push(disposable);
+    let copyOneFileDisposable = vscode.commands.registerCommand('copyfiles.copyOneFile', () => {
+        let editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage('No active editor.');
+            return;
+        }
+
+        let fileName = path.basename(editor.document.fileName);
+        let fileContent = editor.document.getText();
+        let clipboardContent = `File: \`${fileName}\`\n\`\`\`\n${fileContent}\n\`\`\``;
+
+        vscode.env.clipboard.writeText(clipboardContent);
+
+        vscode.window.showInformationMessage('Copied one file to clipboard.');
+    });
+
+    context.subscriptions.push(copyFileNamesAndContentDisposable, copyOneFileDisposable);
 }
 
 export function deactivate() { }

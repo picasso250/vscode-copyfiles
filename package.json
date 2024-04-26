@@ -27,6 +27,10 @@
         "title": "Copy file name and content",
         "category": "Explorer"
       }
+      ,{
+        "command": "copyfiles.copyOneFile",
+        "title": "Copy this file name and content"
+      }
     ]
   },
   "scripts": {
