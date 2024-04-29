@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ollamaFetchStream } from './ollama';
 
 export function activate(context: vscode.ExtensionContext) {
     let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('copyfiles.copyFileNamesAndContent', (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
@@ -77,6 +78,11 @@ export function activate(context: vscode.ExtensionContext) {
             if (message.command === 'run') {
                 const messages = message.messages;
                 console.log('Received messages from webview:', messages);
+                ollamaFetchStream('llama3', messages, (data) => { 
+                    console.log(data);
+                    // send to webview
+                    panel.webview.postMessage({ command: 'append', data: data });
+                 });
             }
         });
 
