@@ -44,22 +44,22 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.showErrorMessage('No active editor.');
             return;
         }
-    
+
         let selection = editor.selection;
         if (selection.isEmpty) {
             vscode.window.showErrorMessage('No text selected.');
             return;
         }
-    
+
         let selectedText = editor.document.getText(selection);
         let clipboardContent = `\`\`\`\n${selectedText}\n\`\`\`\n\n`;
-    
+
         vscode.env.clipboard.writeText(clipboardContent);
-    
+
         vscode.window.showInformationMessage('Copied selected text to clipboard.');
     });
-    
-    context.subscriptions.push(copySelectedTextDisposable);    
+
+    context.subscriptions.push(copySelectedTextDisposable);
 
     context.subscriptions.push(copyFileNamesAndContentDisposable, copyOneFileDisposable);
 
@@ -76,7 +76,30 @@ export function activate(context: vscode.ExtensionContext) {
         // Read and load HTML content
         const htmlPath = vscode.Uri.file(path.join(context.extensionPath, 'webview', 'panel.html'));
         const htmlContent = fs.readFileSync(htmlPath.fsPath, 'utf-8');
-        panel.webview.html = htmlContent;
+
+        function replaceLinksAndScripts(htmlContent: string) {
+            // 替换<link>标签的href属性
+            const linkRegex = /<link[^>]*?href=['"]([^'"]+)['"][^>]*?>/g;
+            htmlContent = htmlContent.replace(linkRegex, (match, href) => {
+                const cssPath = vscode.Uri.file(path.join(context.extensionPath, 'webview', href));
+                const cssContent = fs.readFileSync(cssPath.fsPath, 'utf-8');
+                return `<style>${cssContent}</style>`;
+            });
+
+            // 替换<script>标签的src属性
+            const scriptRegex = /<script[^>]*?src=['"]([^'"]+)['"][^>]*?><\/script>/g;
+            htmlContent = htmlContent.replace(scriptRegex, (match, src) => {
+                const jsPath = vscode.Uri.file(path.join(context.extensionPath, 'webview', src));
+                const jsContent = fs.readFileSync(jsPath.fsPath, 'utf-8');
+                return `<script>${jsContent}</script>`;
+            });
+
+            return htmlContent;
+        }
+
+        const replacedHtmlContent = replaceLinksAndScripts(htmlContent);
+        panel.webview.html = replacedHtmlContent;
+
     });
 
     context.subscriptions.push(disposablePanel);
