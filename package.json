@@ -37,7 +37,7 @@
       },
       {
         "command": "copyfiles.openPanel",
-        "title": "Open Custom Panel"
+        "title": "Open AI Chat Panel"
       }
     ]
   },
