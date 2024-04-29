@@ -73,6 +73,13 @@ export function activate(context: vscode.ExtensionContext) {
             }
         );
 
+        panel.webview.onDidReceiveMessage(message => {
+            if (message.command === 'run') {
+                const messages = message.messages;
+                console.log('Received messages from webview:', messages);
+            }
+        });
+
         // Read and load HTML content
         const htmlPath = vscode.Uri.file(path.join(context.extensionPath, 'webview', 'panel.html'));
         const htmlContent = fs.readFileSync(htmlPath.fsPath, 'utf-8');
