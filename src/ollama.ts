@@ -27,6 +27,7 @@ export async function ollamaFetchStream(model: string, messages: { role: string,
         }
 
         const chunk = decoder.decode(value!, { stream: true }); // 解码当前块
+        console.log(chunk)
         callback(JSON.parse(chunk)); // 调用回调函数处理当前行的 JSON 数据
 
         await readStream(); // 继续读取下一块
