@@ -3,7 +3,7 @@
   "name": "copyfiles",
   "displayName": "copyfiles",
   "description": "copy files' name and content",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "repository": "https://github.com/picasso250/vscode-copyfiles",
   "engines": {
     "vscode": "^1.88.0"
@@ -26,22 +26,26 @@
         "command": "copyfiles.copyFileNamesAndContent",
         "title": "Copy File Name And Content",
         "category": "Explorer"
-      }
-      ,{
+      },
+      {
         "command": "copyfiles.copyOneFile",
         "title": "Copy This File Name And Content"
-      }
-      ,{
+      },
+      {
         "command": "copyfiles.copySelectedText",
-        "title": "Copy Seleted Text"
+        "title": "Copy Selected Text"
+      },
+      {
+        "command": "copyfiles.openPanel",
+        "title": "Open Custom Panel"
       }
     ]
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
+    "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "vscode-test"
   },
