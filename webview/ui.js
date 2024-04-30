@@ -25,19 +25,19 @@ function createLabelAndTextareaGroup(role, receivedContent) {
                     {
                         tag: 'label',
                         attributes: { 'data-role': role, 'for': randomId },
-                        textContent: role + ":"
+                        text: role + ":"
                     },
                     {
                         tag: 'textarea',
                         attributes: { 'id': randomId },
                         classes: ['autoResizeTextarea'],
-                        textContent: receivedContent
+                        text: receivedContent
                     }
                 ]
             },
             {
                 tag: 'button',
-                textContent: '×',
+                text: '×',
                 attributes: { 'type': 'button' },
                 classes: ['delete-button'],
                 events: {
@@ -172,7 +172,7 @@ function addCodeBlockFeatures(parentElement) {
             attributes: {
                 'type': 'button'
             },
-            textContent: 'Copy'
+            text: 'Copy'
         });
     
         copyButton.addEventListener('click', () => {
@@ -187,7 +187,7 @@ function addCodeBlockFeatures(parentElement) {
             attributes: {
                 'type': 'button'
             },
-            textContent: 'Insert To'
+            text: 'Insert To'
         });
     
         insertButton.addEventListener('click', () => {
@@ -205,7 +205,7 @@ function addCodeBlockFeatures(parentElement) {
         attributes: {
             'type': 'button'
         },
-        textContent: 'Copy'
+        text: 'Copy'
     });
 
     divCopyButton.addEventListener('click', () => {
