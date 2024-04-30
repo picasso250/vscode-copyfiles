@@ -67,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
     let disposablePanel = vscode.commands.registerCommand('copyfiles.openPanel', () => {
         const panel = vscode.window.createWebviewPanel(
             'customPanel', // Identifies the type of the webview. Used internally
-            'Custom Panel', // Title of the panel displayed to the user
+            'AI Chat', // Title of the panel displayed to the user
             vscode.ViewColumn.One, // Editor column to show the new webview panel in.
             {
                 enableScripts: true // Enable scripts in the webview
