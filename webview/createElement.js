@@ -1,5 +1,5 @@
 function createElement(config) {
-    const { tag, classes, attributes, events, styles, children, text } = config;
+    const { tag, classes, attributes, events, styles, children, text, html } = config;
     
     // Create the element
     const element = document.createElement(tag);
@@ -27,9 +27,12 @@ function createElement(config) {
         }
     }
     
-    // Add textContent
+    // Add textContent or innerHTML
     if (text && typeof text === 'string') {
         element.textContent = text;
+    }
+    if (html && typeof html === 'string') {
+        element.innerHTML = html;
     }
     
     // Add children
