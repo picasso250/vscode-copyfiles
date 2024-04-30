@@ -68,7 +68,7 @@ export function activate(context: vscode.ExtensionContext) {
         const panel = vscode.window.createWebviewPanel(
             'customPanel', // Identifies the type of the webview. Used internally
             'AI Chat', // Title of the panel displayed to the user
-            vscode.ViewColumn.One, // Editor column to show the new webview panel in.
+            vscode.ViewColumn.Two, // Editor column to show the new webview panel in.
             {
                 enableScripts: true // Enable scripts in the webview
             }
