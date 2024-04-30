@@ -62,22 +62,18 @@ autoResizeHeight(systemGroup.querySelector('textarea'));
 createLabelAndTextareaGroup('user', 'write python code to add 2 numbers');
 
 function showLoading() {
-    const overlay = document.getElementById('_overlay_');
-    const loading = document.getElementById('_loading_');
+    const runButton = document.getElementById('runButton');
 
-    if (overlay && loading) {
-        overlay.classList.remove('hidden');
-        loading.classList.remove('hidden');
+    if (runButton) {
+        runButton.disabled = true;
     }
 }
 
 function hideLoading() {
-    const overlay = document.getElementById('_overlay_');
-    const loading = document.getElementById('_loading_');
+    const runButton = document.getElementById('runButton');
 
-    if (overlay && loading) {
-        overlay.classList.add('hidden');
-        loading.classList.add('hidden');
+    if (runButton) {
+        runButton.disabled = false;
     }
 }
 

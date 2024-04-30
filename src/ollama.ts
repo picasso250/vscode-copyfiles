@@ -18,6 +18,8 @@ export async function ollamaFetchStream(model: string, messages: { role: string,
     const reader = response.body!.getReader(); // 创建一个读取器
     const decoder = new TextDecoder(); // 创建一个文本解码器
 
+    let partialLine = ''; // 用于保存部分未完成的行
+
     const readStream = async () => {
       try {
         const { done, value } = await reader.read();
@@ -27,8 +29,19 @@ export async function ollamaFetchStream(model: string, messages: { role: string,
         }
 
         const chunk = decoder.decode(value!, { stream: true }); // 解码当前块
-        console.log(chunk)
-        callback(JSON.parse(chunk)); // 调用回调函数处理当前行的 JSON 数据
+
+        // 将当前块与未完成的部分拼接起来
+        const lines = (partialLine + chunk).split('\n');
+        
+        // 将最后一个元素（可能是不完整的行）保存在partialLine中
+        partialLine = lines.pop() || '';
+
+        // 处理每一行的 JSON 数据
+        for (const line of lines) {
+          if (line.trim() !== '') {
+            callback(JSON.parse(line.trim()));
+          }
+        }
 
         await readStream(); // 继续读取下一块
       } catch (error) {
