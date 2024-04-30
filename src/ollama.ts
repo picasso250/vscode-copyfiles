@@ -1,4 +1,4 @@
-export async function ollamaFetchStream(model: string, messages: { role: string, content: string }[], callback: (jsonLine: any) => void) {
+export async function ollamaFetchStream(model: string, messages: { role: string; content: string }[], callback: (jsonLine: { done: boolean }) => void) {
   try {
     const response = await fetch('http://localhost:11434/api/chat', {
       method: 'POST',
