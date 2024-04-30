@@ -1,5 +1,5 @@
 function createElement(config) {
-    const { tag, classes, attributes, events, styles, children, textContent } = config;
+    const { tag, classes, attributes, events, styles, children, text } = config;
     
     // Create the element
     const element = document.createElement(tag);
@@ -28,8 +28,8 @@ function createElement(config) {
     }
     
     // Add textContent
-    if (textContent && typeof textContent === 'string') {
-        element.textContent = textContent;
+    if (text && typeof text === 'string') {
+        element.textContent = text;
     }
     
     // Add children
