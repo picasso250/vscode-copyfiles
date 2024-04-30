@@ -165,8 +165,8 @@ function renderMarkdown(placeholder, receivedContent) {
 function addCodeBlockFeatures(parentElement) {
     parentElement.querySelectorAll("pre code").forEach((block) => {
         hljs.highlightBlock(block);
-
-        const button = createElement({
+    
+        const copyButton = createElement({
             tag: 'button',
             classes: ['copy-btn'],
             attributes: {
@@ -174,13 +174,28 @@ function addCodeBlockFeatures(parentElement) {
             },
             textContent: 'Copy'
         });
-
-        button.addEventListener('click', () => {
+    
+        copyButton.addEventListener('click', () => {
             copyTextToClipboard(block.textContent);
         });
-
-        block.parentNode.insertAdjacentElement("beforeend", button);
-    });
+    
+        block.parentNode.insertAdjacentElement("beforeend", copyButton);
+    
+        const insertButton = createElement({
+            tag: 'button',
+            classes: ['insert-btn'],
+            attributes: {
+                'type': 'button'
+            },
+            textContent: 'Insert To'
+        });
+    
+        insertButton.addEventListener('click', () => {
+            insertTo(block.textContent);
+        });
+    
+        block.parentNode.insertAdjacentElement("beforeend", insertButton);
+    });    
 
     // Add copy button for the div's content
     const divContent = parentElement.getAttribute('data-text');
@@ -198,6 +213,13 @@ function addCodeBlockFeatures(parentElement) {
     });
 
     parentElement.insertAdjacentElement("beforeend", divCopyButton);
+}
+
+function insertTo(text){
+    vscode.postMessage({
+        command: 'insert',
+        text: text
+    });
 }
 
 function generateRandomId() {

@@ -75,14 +75,24 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         panel.webview.onDidReceiveMessage(message => {
+            console.log('Received message from webview:', message);
             if (message.command === 'run') {
                 const messages = message.messages;
-                console.log('Received messages from webview:', messages);
-                ollamaFetchStream('llama3', messages, (data) => { 
-                    console.log(data);
-                    // send to webview
+                ollamaFetchStream('llama3', messages, (data) => {
                     panel.webview.postMessage({ command: 'append', data: data });
-                 });
+                });
+            } else if (message.command === 'insert') {
+                const text = message.text;
+                // Find the text editor in the desired panel (ViewColumn.One)
+                const targetEditor = vscode.window.visibleTextEditors.find(editor => editor.viewColumn === vscode.ViewColumn.One);
+                if (targetEditor) {
+                    // Insert text into the target editor
+                    targetEditor.edit(editBuilder => {
+                        editBuilder.insert(targetEditor.selection.active, text);
+                    });
+                } else {
+                    vscode.window.showErrorMessage('No text editor found in the specified panel.');
+                }
             }
         });
 
