@@ -63,12 +63,16 @@ button:disabled {
   border-color: #6c757d; /* Match border color with background for disabled state */
 }
 
-.copy-btn {
+.icon-btn{
+  width: 24px;
+  height: 24px;
   display: inline-block;
-  padding: 5px 10px;
-  font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+.copy-btn {
+  padding: 5px 10px;
 }
 
 .copy-btn:hover {
