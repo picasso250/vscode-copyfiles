@@ -5,11 +5,15 @@ function autoResizeHeight(textarea) {
     textarea.style.height = (textarea.scrollHeight) + "px";
 }
 
-document.body.addEventListener('input', function (event) {
-    const target = event.target;
-    if (target && target.classList.contains('autoResizeTextarea')) {
-        autoResizeHeight(target);
-    }
+const includeCodeInput = document.querySelector("[name=includeCode]");
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.addEventListener('input', function (event) {
+        const target = event.target;
+        if (target && target.classList.contains('autoResizeTextarea')) {
+            autoResizeHeight(target);
+        }
+    });
 });
 
 function createLabelAndTextareaGroup(role, receivedContent) {
@@ -103,6 +107,7 @@ let receivedContent = "";
 // Listen for messages from the extension
 window.addEventListener('message', event => {
     const message = event.data; // Message sent from the extension
+    console.log(message);
     if (message.command === 'append') {
         console.log('Received message from extension:', message.data);
         const jsonLine = message.data;
@@ -126,7 +131,10 @@ window.addEventListener('message', event => {
         } else {
             console.error("Invalid JSON data received:", jsonLine);
         }
-
+    } else if (message.command === 'appendCode') {
+        document.getElementById(message.currentTextareaId).value = message.data;
+    } else {
+        console.error("Invalid command received:", message);
     }
 });
 
@@ -134,13 +142,18 @@ function run() {
     showLoading();
     const messages = buildMessagesArray();
 
+    const textareas = document.querySelectorAll('#inputForm textarea');
+    const currentTextareaId = textareas[textareas.length - 1].getAttribute('id');
+
     const assistantGroup = createLabelAndTextarea();
     textarea = assistantGroup.querySelector('textarea');
 
     // Post messages to the VS Code extension
     vscode.postMessage({
         command: 'run',
-        messages: messages
+        messages: messages,
+        containSeletedText: includeCodeInput.checked,
+        currentTextareaId: currentTextareaId
     });
     hideLoading();
     return;

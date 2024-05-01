@@ -76,15 +76,30 @@ export function activate(context: vscode.ExtensionContext) {
 
         panel.webview.onDidReceiveMessage(message => {
             console.log('Received message from webview:', message);
+            // Find the text editor in the desired panel (ViewColumn.One)
+            const targetEditor = vscode.window.visibleTextEditors.find(editor => editor.viewColumn === vscode.ViewColumn.One);
+
             if (message.command === 'run') {
+                // get seleted text from the text editor
+                let selectedText = "";
+                if (targetEditor) {
+                    selectedText = targetEditor.document.getText(targetEditor.selection);
+                }
                 const messages = message.messages;
+                if (message.containSeletedText) {
+                    const lastIndex = messages.length - 1;
+                    messages[lastIndex].content += `\n\`\`\n${selectedText}\n\`\`\n`;
+                    panel.webview.postMessage({
+                        command: 'appendCode',
+                        data: messages[lastIndex].content,
+                        currentTextareaId: message.currentTextareaId
+                    });
+                }
                 ollamaFetchStream('llama3', messages, (data) => {
                     panel.webview.postMessage({ command: 'append', data: data });
                 });
             } else if (message.command === 'insert') {
                 const text = message.text;
-                // Find the text editor in the desired panel (ViewColumn.One)
-                const targetEditor = vscode.window.visibleTextEditors.find(editor => editor.viewColumn === vscode.ViewColumn.One);
                 if (targetEditor) {
                     // Insert text into the target editor
                     targetEditor.edit(editBuilder => {
