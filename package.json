@@ -4,7 +4,7 @@
   "displayName": "llamaChat",
   "description": "chat with llama, or copy files' name and content",
   "version": "0.0.4",
-  "repository": "https://github.com/picasso250/vscode-copyfiles",
+  "repository": "https://github.com/picasso250/vscode-llamachat",
   "engines": {
     "vscode": "^1.88.0"
   },
@@ -17,26 +17,26 @@
     "menus": {
       "explorer/context": [
         {
-          "command": "copyfiles.copyFileNamesAndContent"
+          "command": "llamachat.copyFileNamesAndContent"
         }
       ]
     },
     "commands": [
       {
-        "command": "copyfiles.copyFileNamesAndContent",
+        "command": "llamachat.copyFileNamesAndContent",
         "title": "Copy File Name And Content",
         "category": "Explorer"
       },
       {
-        "command": "copyfiles.copyOneFile",
+        "command": "llamachat.copyOneFile",
         "title": "Copy This File Name And Content"
       },
       {
-        "command": "copyfiles.copySelectedText",
+        "command": "llamachat.copySelectedText",
         "title": "Copy Selected Text"
       },
       {
-        "command": "copyfiles.openPanel",
+        "command": "llamachat.openPanel",
         "title": "Open AI Chat Panel"
       }
     ]

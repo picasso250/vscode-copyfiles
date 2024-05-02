@@ -1,4 +1,4 @@
-# copyfiles README
+# llamachat README
 
 Copy Files 是一个用于 Visual Studio Code 的扩展，可以将文件名和内容复制到剪贴板。
 

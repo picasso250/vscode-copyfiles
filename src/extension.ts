@@ -7,7 +7,7 @@ function wrapInBackticks(s: string): string {
     return "```\n" + s + "\n```";
 }
 export function activate(context: vscode.ExtensionContext) {
-    let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('copyfiles.copyFileNamesAndContent', (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
+    let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('llamachat.copyFileNamesAndContent', (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
         if (!selectedFiles.some(fileUri => fileUri.path === currentFile.path)) {
             selectedFiles = [currentFile];
         }
@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(message);
     });
 
-    let copyOneFileDisposable = vscode.commands.registerCommand('copyfiles.copyOneFile', () => {
+    let copyOneFileDisposable = vscode.commands.registerCommand('llamachat.copyOneFile', () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage('No active editor.');
@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('Copied one file to clipboard.');
     });
 
-    let copySelectedTextDisposable = vscode.commands.registerCommand('copyfiles.copySelectedText', () => {
+    let copySelectedTextDisposable = vscode.commands.registerCommand('llamachat.copySelectedText', () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage('No active editor.');
@@ -67,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(copyFileNamesAndContentDisposable, copyOneFileDisposable);
 
-    let disposablePanel = vscode.commands.registerCommand('copyfiles.openPanel', () => {
+    let disposablePanel = vscode.commands.registerCommand('llamachat.openPanel', () => {
         const panel = vscode.window.createWebviewPanel(
             'customPanel', // Identifies the type of the webview. Used internally
             'AI Chat', // Title of the panel displayed to the user
