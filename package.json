@@ -1,9 +1,9 @@
 {
   "publisher": "xiaochi",
-  "name": "copyfiles",
-  "displayName": "copyfiles",
-  "description": "copy files' name and content",
-  "version": "0.0.3",
+  "name": "llamachat",
+  "displayName": "llamaChat",
+  "description": "chat with llama, or copy files' name and content",
+  "version": "0.0.4",
   "repository": "https://github.com/picasso250/vscode-copyfiles",
   "engines": {
     "vscode": "^1.88.0"

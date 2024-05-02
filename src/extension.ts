@@ -3,6 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ollamaFetchStream } from './ollama';
 
+function wrapInBackticks(s: string): string {
+    return "```\n" + s + "\n```";
+}
 export function activate(context: vscode.ExtensionContext) {
     let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('copyfiles.copyFileNamesAndContent', (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
         if (!selectedFiles.some(fileUri => fileUri.path === currentFile.path)) {
@@ -88,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
                 const messages = message.messages;
                 if (message.containSeletedText) {
                     const lastIndex = messages.length - 1;
-                    messages[lastIndex].content += `\n\`\`\n${selectedText}\n\`\`\n`;
+                    messages[lastIndex].content += `\n${wrapInBackticks(selectedText)}\n`;
                     panel.webview.postMessage({
                         command: 'appendCode',
                         data: messages[lastIndex].content,

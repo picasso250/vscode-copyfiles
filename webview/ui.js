@@ -60,10 +60,10 @@ function createLabelAndTextareaGroup(role, receivedContent) {
 }
 
 const currentDate = new Date().toISOString().slice(0, 10);
-const systemGroup = createLabelAndTextareaGroup('system', "You are ChatGPT, a large language model trained by OpenAI, based on the GPT-3.5 architecture.\nKnowledge cutoff: 2022-01\nCurrent date: " + currentDate + "\n\n已设置默认语言为中文.");
+const systemGroup = createLabelAndTextareaGroup('system', "You are Yan, an AI code assistant, based on the llama3 architecture.\nCurrent date: " + currentDate + "\n");
 
 autoResizeHeight(systemGroup.querySelector('textarea'));
-createLabelAndTextareaGroup('user', 'write python code to add 2 numbers');
+createLabelAndTextareaGroup('user', '');
 
 function showLoading() {
     const runButton = document.getElementById('runButton');
@@ -132,7 +132,9 @@ window.addEventListener('message', event => {
             console.error("Invalid JSON data received:", jsonLine);
         }
     } else if (message.command === 'appendCode') {
-        document.getElementById(message.currentTextareaId).value = message.data;
+        const ta = document.getElementById(message.currentTextareaId)
+        ta.value = message.data;
+        autoResizeHeight(ta);
     } else {
         console.error("Invalid command received:", message);
     }
