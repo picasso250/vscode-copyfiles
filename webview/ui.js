@@ -1,4 +1,29 @@
-window.vscode = acquireVsCodeApi();
+if (window.acquireVsCodeApi)
+    window.vscode = acquireVsCodeApi();
+else
+    window.vscode = {
+        postMessage(message) {
+            setTimeout(() => {
+                window.postMessage({
+                    command: 'append',
+                    data: {
+                        done: false,
+                        message: {
+                            content: "helo test"
+                        }
+                    }
+                }, '*');
+                setTimeout(() => {
+                    window.postMessage({
+                        command: 'append',
+                        data: {
+                            done: true,
+                        }
+                    }, '*');
+                }, 1000);
+            }, 1000);
+        }
+    };
 
 function autoResizeHeight(textarea) {
     textarea.style.height = 'auto';
@@ -78,18 +103,21 @@ function createLabelAndTextareaGroup(role, receivedContent) {
 
 const currentDate = new Date().toISOString().slice(0, 10);
 const systemGroup = createLabelAndTextareaGroup(
-    'system', 
+    'system',
     "You are an AI code assistant.\nCurrent date: " + currentDate + "\n"
 );
 
 autoResizeHeight(systemGroup.querySelector('textarea'));
 createLabelAndTextareaGroup('user', '');
 
+let oldText;
 function showLoading() {
     const runButton = document.getElementById('runButton');
 
     if (runButton) {
         runButton.disabled = true;
+        oldText = runButton.textContent;
+        runButton.textContent = "loading...";
     }
 }
 
@@ -98,6 +126,7 @@ function hideLoading() {
 
     if (runButton) {
         runButton.disabled = false;
+        runButton.textContent = oldText;
     }
 }
 
@@ -132,13 +161,13 @@ window.addEventListener('message', event => {
         console.log('Received message from extension:', message.data);
         const jsonLine = message.data;
         console.log(jsonLine)
-        hideLoading();
 
         if (jsonLine && jsonLine.done === true) {
             const div = renderMarkdown(textarea, receivedContent);
             console.log('done');
             div.scrollIntoView();
             receivedContent = "";
+            hideLoading();
         } else if (jsonLine && jsonLine.hasOwnProperty("message")) {
             const message = jsonLine.message;
             const content = message.content;
@@ -178,7 +207,6 @@ function run() {
         containSeletedText: includeCodeInput.checked,
         currentTextareaId: currentTextareaId
     });
-    hideLoading();
     return;
 }
 
