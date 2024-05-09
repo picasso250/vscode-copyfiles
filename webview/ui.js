@@ -84,7 +84,7 @@ function createLabelAndTextareaGroup(role, receivedContent) {
             {
                 tag: 'button',
                 text: '×',
-                attributes: { 'type': 'button' },
+                attributes: { 'type': 'button', 'title': "删除" },
                 classes: ['delete-button'],
                 events: {
                     click: function () {
@@ -111,9 +111,8 @@ autoResizeHeight(systemGroup.querySelector('textarea'));
 createLabelAndTextareaGroup('user', '');
 
 let oldText;
+const runButton = document.getElementById('runButton');
 function showLoading() {
-    const runButton = document.getElementById('runButton');
-
     if (runButton) {
         runButton.disabled = true;
         oldText = runButton.textContent;
@@ -122,8 +121,6 @@ function showLoading() {
 }
 
 function hideLoading() {
-    const runButton = document.getElementById('runButton');
-
     if (runButton) {
         runButton.disabled = false;
         runButton.textContent = oldText;

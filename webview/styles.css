@@ -4,8 +4,10 @@ html {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-  background-color: #1e1e1e; /* Dark background color */
-  color: #fff; /* Text color */
+  background-color: #1e1e1e;
+  /* Dark background color */
+  color: #fff;
+  /* Text color */
 }
 
 .container {
@@ -18,22 +20,27 @@ html {
   box-sizing: border-box;
   padding: 20px;
   overflow-y: auto;
-  background-color: #333; /* Darker background color for editor */
+  background-color: #333;
+  /* Darker background color for editor */
 }
 
 h2 {
   margin-top: 0;
-  color: #ccc; /* Heading color */
+  color: #ccc;
+  /* Heading color */
 }
 
 textarea {
   margin-bottom: 10px;
   padding: 6px;
   width: 100%;
-  border: 1px solid #555; /* Border color for textarea */
+  border: 1px solid #555;
+  /* Border color for textarea */
   resize: vertical;
-  background-color: #444; /* Textarea background color */
-  color: #fff; /* Text color */
+  background-color: #444;
+  /* Textarea background color */
+  color: #fff;
+  /* Text color */
 }
 
 textarea:focus {
@@ -41,29 +48,37 @@ textarea:focus {
   border-color: #007bff;
 }
 
-button {
+.btn {
   padding: 10px 20px;
-  background-color: #007bff;
+  background-color: #1e1e1e;
+  /* Dark background color for .btn */
   color: #fff;
-  border: 1px solid #007bff; /* Add a border for better visibility */
-  border-radius: 5px; /* Add some border radius for a softer look */
+  border: 1px solid #1e1e1e;
+  /* Dark border color for .btn */
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s; /* Add transitions for smoother hover effect */
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
-button:hover {
-  background-color: #0056b3; /* Darken the background color on hover */
-  border-color: #0056b3; /* Darken the border color on hover */
+.btn:hover {
+  background-color: #19607d;
+  /* Darken the background color on hover */
+  border-color: #441b1b;
+  /* Darken the border color on hover */
 }
 
-button:disabled {
-  background-color: #6c757d; /* Darker background color for disabled state */
-  color: #ccc; /* Lighter text color for disabled state */
-  cursor: not-allowed; /* Change cursor to indicate disabled state */
-  border-color: #6c757d; /* Match border color with background for disabled state */
+.btn:disabled {
+  background-color: #6c757d;
+  /* Darker background color for disabled state */
+  color: #ccc;
+  /* Lighter text color for disabled state */
+  cursor: not-allowed;
+  /* Change cursor to indicate disabled state */
+  border-color: #6c757d;
+  /* Match border color with background for disabled state */
 }
 
-.icon-btn{
+.icon-btn {
   width: 24px;
   height: 24px;
   display: inline-block;
@@ -97,10 +112,16 @@ button:disabled {
 .delete-button {
   border: none;
   background-color: transparent;
-  color: red;
+  color: #9f9f9f;
   font-weight: bold;
   font-size: 16px;
   cursor: pointer;
+  margin-left: 1em;
+  transition: transform 0.3s ease; /* 添加过渡效果 */
+}
+
+.delete-button:hover {
+  transform: rotate(-90deg); /* 设置hover时的旋转效果 */
 }
 
 .hidden {
