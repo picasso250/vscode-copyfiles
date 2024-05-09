@@ -3,7 +3,7 @@
   "name": "llamachat",
   "displayName": "llamaChat",
   "description": "chat with llama, or copy files' name and content",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "repository": "https://github.com/picasso250/vscode-llamachat",
   "engines": {
     "vscode": "^1.88.0"
