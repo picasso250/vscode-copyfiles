@@ -6,6 +6,7 @@ function autoResizeHeight(textarea) {
 }
 
 const includeCodeInput = document.querySelector("[name=includeCode]");
+const modelSelect = document.getElementById("modelSelect");
 
 document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('input', function (event) {
@@ -13,6 +14,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target && target.classList.contains('autoResizeTextarea')) {
             autoResizeHeight(target);
         }
+    });
+
+    const selectedModel = localStorage.getItem('selectedModel');
+    if (selectedModel) {
+        modelSelect.value = selectedModel;
+        vscode.postMessage({
+            command: 'prepare',
+            model: modelSelect.value,
+        });
+    }
+    modelSelect.addEventListener("change", function () {
+        localStorage.setItem('selectedModel', modelSelect.value);
+        vscode.postMessage({
+            command: 'prepare',
+            model: modelSelect.value,
+        });
     });
 });
 
@@ -60,7 +77,10 @@ function createLabelAndTextareaGroup(role, receivedContent) {
 }
 
 const currentDate = new Date().toISOString().slice(0, 10);
-const systemGroup = createLabelAndTextareaGroup('system', "You are Yan, an AI code assistant, based on the llama3 architecture.\nCurrent date: " + currentDate + "\n");
+const systemGroup = createLabelAndTextareaGroup(
+    'system', 
+    "You are an AI code assistant.\nCurrent date: " + currentDate + "\n"
+);
 
 autoResizeHeight(systemGroup.querySelector('textarea'));
 createLabelAndTextareaGroup('user', '');
@@ -153,6 +173,7 @@ function run() {
     // Post messages to the VS Code extension
     vscode.postMessage({
         command: 'run',
+        model: modelSelect.value,
         messages: messages,
         containSeletedText: includeCodeInput.checked,
         currentTextareaId: currentTextareaId

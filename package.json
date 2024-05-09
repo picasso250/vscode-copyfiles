@@ -24,20 +24,20 @@
     "commands": [
       {
         "command": "llamachat.copyFileNamesAndContent",
-        "title": "Copy File Name And Content",
+        "title": "llamaChat: Copy File Name And Content",
         "category": "Explorer"
       },
       {
         "command": "llamachat.copyOneFile",
-        "title": "Copy This File Name And Content"
+        "title": "llamaChat: Copy This File Name And Content"
       },
       {
         "command": "llamachat.copySelectedText",
-        "title": "Copy Selected Text"
+        "title": "llamaChat: Copy Selected Text"
       },
       {
         "command": "llamachat.openPanel",
-        "title": "Open AI Chat Panel"
+        "title": "llamaChat: Open AI Chat Panel"
       }
     ]
   },

@@ -14,6 +14,11 @@
 <body>
   <div class="container">
     <div class="editor">
+      <label for="modelSelect">模型：</label>
+      <select name="model" id="modelSelect">
+        <option value="llama3">llama3</option>
+        <option value="codellama">codellama</option>
+      </select>
       <form id="inputForm">
       </form>
       <label><input type="checkbox" name="includeCode" /> 包括选择的代码</label>

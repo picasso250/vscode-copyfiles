@@ -82,7 +82,9 @@ export function activate(context: vscode.ExtensionContext) {
             // Find the text editor in the desired panel (ViewColumn.One)
             const targetEditor = vscode.window.visibleTextEditors.find(editor => editor.viewColumn === vscode.ViewColumn.One);
 
-            if (message.command === 'run') {
+            if (message.command === 'prepare') {
+                ollamaFetchStream(message.model, [], (data) => { });
+            } else if (message.command === 'run') {
                 // get seleted text from the text editor
                 let selectedText = "";
                 if (targetEditor) {
@@ -98,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
                         currentTextareaId: message.currentTextareaId
                     });
                 }
-                ollamaFetchStream('llama3', messages, (data) => {
+                ollamaFetchStream(message.model, messages, (data) => {
                     panel.webview.postMessage({ command: 'append', data: data });
                 });
             } else if (message.command === 'insert') {
