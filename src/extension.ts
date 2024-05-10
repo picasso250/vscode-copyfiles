@@ -106,14 +106,21 @@ export function activate(context: vscode.ExtensionContext) {
             } else if (message.command === 'insert') {
                 const text = message.text;
                 if (targetEditor) {
-                    // Insert text into the target editor
-                    targetEditor.edit(editBuilder => {
-                        editBuilder.insert(targetEditor.selection.active, text);
-                    });
+                    // If there is selected text, replace it with the new text
+                    if (!targetEditor.selection.isEmpty) {
+                        targetEditor.edit(editBuilder => {
+                            editBuilder.replace(targetEditor.selection, text);
+                        });
+                    } else {
+                        // If no text is selected, insert text at the current cursor position
+                        targetEditor.edit(editBuilder => {
+                            editBuilder.insert(targetEditor.selection.active, text);
+                        });
+                    }
                 } else {
                     vscode.window.showErrorMessage('No text editor found in the specified panel.');
                 }
-            }
+            }            
         });
 
         // Read and load HTML content
