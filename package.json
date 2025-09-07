@@ -57,6 +57,11 @@
         "command": "llamachat.copyFolderContent",
         "title": "llamaChat: Copy Folder Content Recursively",
         "category": "Explorer"
+      },
+      {
+        "command": "llamachat.copyAllOpenFiles",
+        "title": "llamaChat: Copy All Open Files Content",
+        "category": "File"
       }
     ]
   },

@@ -107,7 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Command: Copy content of the currently active file
-    let copyOneFileDisposable = vscode.commands.registerCommand('llamachat.copyOneFile', () => {
+    let copyOneFileDisposable = vscode.commands.registerCommand('llamachat.copyOneFile', async () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage('No active editor.');
@@ -115,15 +115,32 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         try {
-            const fileUri = editor.document.uri;
-            const fileContent = editor.document.getText();
-            const clipboardContent = formatFileContentForClipboard(fileUri, fileContent);
+            const document = editor.document;
+            const fileUri = document.uri;
+            const fileContent = document.getText();
+            let clipboardContent: string;
+            let message: string;
 
-            vscode.env.clipboard.writeText(clipboardContent);
-            vscode.window.showInformationMessage('Copied one file to clipboard.');
+            if (fileUri.scheme === 'file') {
+                // It's a regular file on the file system
+                clipboardContent = formatFileContentForClipboard(fileUri, fileContent);
+                message = 'Copied one file to clipboard.';
+            } else if (fileUri.scheme === 'untitled') {
+                // It's an unsaved untitled document, only copy content
+                clipboardContent = `\`\`\`\n${fileContent}\n\`\`\`\n\n`;
+                message = 'Copied content of untitled file to clipboard.';
+            } else {
+                // Handle other schemes (e.g., 'git', 'output', etc.)
+                vscode.window.showWarningMessage(`Cannot copy content from document with scheme "${fileUri.scheme}". Only file system or untitled documents are supported.`);
+                return;
+            }
+
+            await vscode.env.clipboard.writeText(clipboardContent);
+            vscode.window.showInformationMessage(message);
+
         } catch (error) {
-            console.error(`Failed to copy active file: ${error}`);
-            vscode.window.showErrorMessage('Failed to copy active file content.');
+            console.error(`Failed to copy active file/document: ${error}`);
+            vscode.window.showErrorMessage('Failed to copy active file/document content.');
         }
     });
 
@@ -180,7 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
         return contents;
     }
 
-    // New Command: Copy entire folder content recursively
+    // Command: Copy entire folder content recursively
     let copyFolderContentDisposable = vscode.commands.registerCommand('llamachat.copyFolderContent', async (folderUri: vscode.Uri) => {
         if (!folderUri) {
             vscode.window.showErrorMessage('No folder selected.');
@@ -218,11 +235,39 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
+    // NEW Command: Copy content of all currently open files
+    let copyAllOpenFilesDisposable = vscode.commands.registerCommand('llamachat.copyAllOpenFiles', async () => {
+        const openFilesToCopy: string[] = [];
+
+        // Iterate through all open TextDocuments
+        for (const document of vscode.workspace.textDocuments) {
+            // Only consider file system documents that are not untitled
+            if (document.uri.scheme === 'file' && !document.isUntitled) {
+                try {
+                    const fileContent = document.getText();
+                    openFilesToCopy.push(formatFileContentForClipboard(document.uri, fileContent));
+                } catch (error) {
+                    console.error(`Failed to copy open file ${document.uri.fsPath}: ${error}`);
+                    vscode.window.showWarningMessage(`Could not copy content from open file "${path.basename(document.uri.fsPath)}".`);
+                }
+            }
+        }
+
+        if (openFilesToCopy.length > 0) {
+            await vscode.env.clipboard.writeText(openFilesToCopy.join(''));
+            const numFilesCopied = openFilesToCopy.length;
+            vscode.window.showInformationMessage(`Copied ${numFilesCopied} open file${numFilesCopied > 1 ? 's' : ''} to clipboard.`);
+        } else {
+            vscode.window.showInformationMessage('No open files found to copy.');
+        }
+    });
+
     context.subscriptions.push(
         copySelectedTextDisposable,
         copyFileNamesAndContentDisposable,
         copyOneFileDisposable,
-        copyFolderContentDisposable
+        copyFolderContentDisposable,
+        copyAllOpenFilesDisposable // Add the new disposable here
     );
 }
 
