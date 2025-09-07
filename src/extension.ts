@@ -65,13 +65,45 @@ function formatFileContentForClipboard(fileUri: vscode.Uri, fileContent: string)
     return `--- FILE: ${pathString} ---\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
 }
 
+/**
+ * Reads the content of 'prompt.txt' from the workspace root if enabled by configuration.
+ * @returns A formatted string of the prompt.txt content, or an empty string if not found, disabled, or an error occurs.
+ */
+async function getPromptFileContent(): Promise<string> {
+    const config = vscode.workspace.getConfiguration('llamachat');
+    const includePromptFile = config.get<boolean>('includePromptFile', true);
+
+    if (!includePromptFile) {
+        return '';
+    }
+
+    // Get the first workspace folder. If there are multiple, we assume the first one is the main project root.
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        return ''; // No workspace open
+    }
+
+    const rootUri = workspaceFolders[0].uri;
+    const promptFilePath = path.join(rootUri.fsPath, 'prompt.txt');
+
+    try {
+        const fileStat = await vscode.workspace.fs.stat(vscode.Uri.file(promptFilePath));
+        if (fileStat.type === vscode.FileType.File) {
+            const contentBuffer = await vscode.workspace.fs.readFile(vscode.Uri.file(promptFilePath));
+            const content = Buffer.from(contentBuffer).toString('utf8');
+            return `${content}\n\n`;
+        }
+    } catch (error) {
+        // File not found or other read error, silently ignore as it's an optional feature
+        // console.warn(`Could not read prompt.txt at ${promptFilePath}: ${error}`);
+    }
+    return '';
+}
 
 export function activate(context: vscode.ExtensionContext) {
 
     // Command: Copy selected files' names and content
     let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('llamachat.copyFileNamesAndContent', async (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
-        // VS Code can sometimes pass currentFile as undefined if the command is invoked from a different context
-        // Ensure selectedFiles is an array and contains the currentFile if it's a file context.
         let filesToCopy: vscode.Uri[] = [];
         if (selectedFiles && selectedFiles.length > 0) {
              // Filter out directories if any are mistakenly passed.
@@ -86,6 +118,11 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         let clipboardContent: string[] = [];
+        const promptContent = await getPromptFileContent();
+        if (promptContent) {
+            clipboardContent.push(promptContent);
+        }
+
         for (const fileUri of filesToCopy) {
             try {
                 const fileContent = fs.readFileSync(fileUri.fsPath, 'utf-8');
@@ -97,8 +134,8 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         if (clipboardContent.length > 0) {
-            vscode.env.clipboard.writeText(clipboardContent.join(''));
-            let numFilesCopied = clipboardContent.length;
+            await vscode.env.clipboard.writeText(clipboardContent.join(''));
+            let numFilesCopied = filesToCopy.length; // Count only actual files, not the prompt.txt
             let message = `Copied ${numFilesCopied} file${numFilesCopied > 1 ? 's' : ''} to clipboard.`;
             vscode.window.showInformationMessage(message);
         } else {
@@ -121,13 +158,19 @@ export function activate(context: vscode.ExtensionContext) {
             let clipboardContent: string;
             let message: string;
 
+            const promptContent = await getPromptFileContent();
+            let finalContentParts: string[] = [];
+            if (promptContent) {
+                finalContentParts.push(promptContent);
+            }
+
             if (fileUri.scheme === 'file') {
                 // It's a regular file on the file system
-                clipboardContent = formatFileContentForClipboard(fileUri, fileContent);
+                finalContentParts.push(formatFileContentForClipboard(fileUri, fileContent));
                 message = 'Copied one file to clipboard.';
             } else if (fileUri.scheme === 'untitled') {
-                // It's an unsaved untitled document, only copy content
-                clipboardContent = `\`\`\`\n${fileContent}\n\`\`\`\n\n`;
+                // It's an unsaved untitled document, only copy content, no path for untitled
+                finalContentParts.push(`\`\`\`\n${fileContent}\n\`\`\`\n\n`);
                 message = 'Copied content of untitled file to clipboard.';
             } else {
                 // Handle other schemes (e.g., 'git', 'output', etc.)
@@ -135,8 +178,12 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            await vscode.env.clipboard.writeText(clipboardContent);
-            vscode.window.showInformationMessage(message);
+            if (finalContentParts.length > 0) {
+                await vscode.env.clipboard.writeText(finalContentParts.join(''));
+                vscode.window.showInformationMessage(message);
+            } else {
+                vscode.window.showInformationMessage('Nothing was copied.');
+            }
 
         } catch (error) {
             console.error(`Failed to copy active file/document: ${error}`);
@@ -145,7 +192,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Command: Copy selected text from the active editor
-    let copySelectedTextDisposable = vscode.commands.registerCommand('llamachat.copySelectedText', () => {
+    let copySelectedTextDisposable = vscode.commands.registerCommand('llamachat.copySelectedText', async () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage('No active editor.');
@@ -159,9 +206,15 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         let selectedText = editor.document.getText(selection);
-        let clipboardContent = `\`\`\`\n${selectedText}\n\`\`\`\n\n`; // This command's format is kept as original
+        
+        const promptContent = await getPromptFileContent();
+        let finalContentParts: string[] = [];
+        if (promptContent) {
+            finalContentParts.push(promptContent);
+        }
+        finalContentParts.push(`\`\`\`\n${selectedText}\n\`\`\`\n\n`); // This command's format is kept as original
 
-        vscode.env.clipboard.writeText(clipboardContent);
+        await vscode.env.clipboard.writeText(finalContentParts.join(''));
         vscode.window.showInformationMessage('Copied selected text to clipboard.');
     });
 
@@ -178,6 +231,11 @@ export function activate(context: vscode.ExtensionContext) {
 
             for (const [name, type] of entries) {
                 const entryUri = vscode.Uri.joinPath(folderUri, name);
+                // Exclude prompt.txt itself from recursive folder copy if it's within the copied folder
+                if (name === 'prompt.txt' && entryUri.fsPath === path.join(folderUri.fsPath, 'prompt.txt')) {
+                    continue; 
+                }
+
                 if (type === vscode.FileType.File) {
                     try {
                         const fileContent = fs.readFileSync(entryUri.fsPath, 'utf-8');
@@ -216,19 +274,26 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `Copying folder content from "${path.basename(folderUri.fsPath)}"`,
             cancellable: false
         }, async (progress) => {
             progress.report({ message: 'Collecting files...' });
-            const allFileContents = await readFolderRecursively(folderUri);
+            
+            const promptContent = await getPromptFileContent();
+            let allFileContents: string[] = [];
+            if (promptContent) {
+                allFileContents.push(promptContent);
+            }
+
+            const folderFiles = await readFolderRecursively(folderUri);
+            allFileContents.push(...folderFiles);
 
             if (allFileContents.length > 0) {
                 progress.report({ message: 'Copying to clipboard...' });
                 await vscode.env.clipboard.writeText(allFileContents.join(''));
-                vscode.window.showInformationMessage(`Copied ${allFileContents.length} files from folder "${path.basename(folderUri.fsPath)}" to clipboard.`);
+                vscode.window.showInformationMessage(`Copied ${folderFiles.length} files from folder "${path.basename(folderUri.fsPath)}" to clipboard.`);
             } else {
                 vscode.window.showInformationMessage(`No files found in folder "${path.basename(folderUri.fsPath)}" to copy.`);
             }
@@ -239,6 +304,12 @@ export function activate(context: vscode.ExtensionContext) {
     let copyAllOpenFilesDisposable = vscode.commands.registerCommand('llamachat.copyAllOpenFiles', async () => {
         const openFilesToCopy: string[] = [];
 
+        const promptContent = await getPromptFileContent();
+        if (promptContent) {
+            openFilesToCopy.push(promptContent);
+        }
+
+        let actualFilesCopiedCount = 0; // Counter for actual files, excluding prompt.txt
         // Iterate through all open TextDocuments
         for (const document of vscode.workspace.textDocuments) {
             // Only consider file system documents that are not untitled
@@ -246,6 +317,7 @@ export function activate(context: vscode.ExtensionContext) {
                 try {
                     const fileContent = document.getText();
                     openFilesToCopy.push(formatFileContentForClipboard(document.uri, fileContent));
+                    actualFilesCopiedCount++;
                 } catch (error) {
                     console.error(`Failed to copy open file ${document.uri.fsPath}: ${error}`);
                     vscode.window.showWarningMessage(`Could not copy content from open file "${path.basename(document.uri.fsPath)}".`);
@@ -255,8 +327,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (openFilesToCopy.length > 0) {
             await vscode.env.clipboard.writeText(openFilesToCopy.join(''));
-            const numFilesCopied = openFilesToCopy.length;
-            vscode.window.showInformationMessage(`Copied ${numFilesCopied} open file${numFilesCopied > 1 ? 's' : ''} to clipboard.`);
+            vscode.window.showInformationMessage(`Copied ${actualFilesCopiedCount} open file${actualFilesCopiedCount > 1 ? 's' : ''} to clipboard.`);
         } else {
             vscode.window.showInformationMessage('No open files found to copy.');
         }
@@ -267,7 +338,7 @@ export function activate(context: vscode.ExtensionContext) {
         copyFileNamesAndContentDisposable,
         copyOneFileDisposable,
         copyFolderContentDisposable,
-        copyAllOpenFilesDisposable // Add the new disposable here
+        copyAllOpenFilesDisposable
     );
 }
 

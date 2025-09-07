@@ -3,7 +3,7 @@
   "name": "llamachat",
   "displayName": "llamaChat",
   "description": "chat with llama, or copy files' name and content",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "repository": "https://github.com/picasso250/vscode-llamachat",
   "engines": {
     "vscode": "^1.88.0"
@@ -63,7 +63,17 @@
         "title": "llamaChat: Copy All Open Files Content",
         "category": "File"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "LlamaChat Configuration",
+      "properties": {
+        "llamachat.includePromptFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to include the content of 'prompt.txt' from the workspace root at the beginning of copied content."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
