@@ -15,9 +15,27 @@
   "main": "./out/extension.js",
   "contributes": {
     "menus": {
+      "editor/context": [
+        {
+          "command": "llamachat.copySelectedText",
+          "group": "llamachat_commands@1",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "llamachat.copyOneFile",
+          "group": "llamachat_commands@2"
+        }
+      ],
       "explorer/context": [
         {
-          "command": "llamachat.copyFileNamesAndContent"
+          "command": "llamachat.copyFileNamesAndContent",
+          "group": "llamachat_commands@1",
+          "when": "resourceExtname =~ /\\.(ts|js|py|java|cpp|h|md|json|yml|yaml|xml|html|css|scss|less|go|rs|php|rb|swift|kt|kts|groovy|clj|cljs|lua|nim|r|sh|bat|cmd|ps1|psm1|f90|f|for|f77|vb|vbs|vba|sql|c|cs|csproj|sln)$/i || resourceScheme == 'file' && !resourceIsFolder"
+        },
+        {
+          "command": "llamachat.copyFolderContent",
+          "group": "llamachat_commands@2",
+          "when": "explorerResourceIsFolder"
         }
       ]
     },
@@ -29,15 +47,16 @@
       },
       {
         "command": "llamachat.copyOneFile",
-        "title": "llamaChat: Copy This File Name And Content"
+        "title": "llamaChat: Copy Active File Name And Content"
       },
       {
         "command": "llamachat.copySelectedText",
         "title": "llamaChat: Copy Selected Text"
       },
       {
-        "command": "llamachat.openPanel",
-        "title": "llamaChat: Open AI Chat Panel"
+        "command": "llamachat.copyFolderContent",
+        "title": "llamaChat: Copy Folder Content Recursively",
+        "category": "Explorer"
       }
     ]
   },
@@ -59,5 +78,8 @@
     "typescript": "^5.3.3",
     "@vscode/test-cli": "^0.0.8",
     "@vscode/test-electron": "^2.3.9"
+  },
+  "dependencies": {
+    "undici": "^6.6.0"
   }
 }
