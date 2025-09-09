@@ -57,12 +57,12 @@ function getRelativePathString(fileUri: vscode.Uri, workspaceRootUri: vscode.Uri
  * The path is relative to the project root if the file is within a workspace, otherwise it's an absolute path.
  * @param fileUri The URI of the file.
  * @param fileContent The content of the file.
- * @returns A formatted string: "--- FILE: <relative_or_absolute_path> ---\n```\n{content}\n```\n\n"
+ * @returns A formatted string: "---FILE: <relative_or_absolute_path>---\n```\n{content}\n```\n\n"
  */
 function formatFileContentForClipboard(fileUri: vscode.Uri, fileContent: string): string {
     const workspaceRootUri = getWorkspaceRootForUri(fileUri);
     const pathString = getRelativePathString(fileUri, workspaceRootUri);
-    return `--- FILE: ${pathString} ---\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
+    return `---FILE: ${pathString}---\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
 }
 
 /**
