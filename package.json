@@ -1,9 +1,9 @@
 {
-  "publisher": "xiaochi",
-  "name": "llamachat",
-  "displayName": "llamaChat",
-  "description": "chat with llama, or copy files' name and content",
-  "version": "0.0.9",
+  "publisher": "ChiFlow",
+  "name": "llm-code-copier",
+  "displayName": "LLM Code Copier",
+  "description": "Copy code snippets and files for LLM interactions, or general code copying needs.",
+  "version": "0.0.10",
   "repository": "https://github.com/picasso250/vscode-llamachat",
   "engines": {
     "vscode": "^1.88.0"
@@ -42,30 +42,30 @@
     "commands": [
       {
         "command": "llamachat.copyFileNamesAndContent",
-        "title": "llamaChat: Copy File Name And Content",
+        "title": "LLM Code Copier: Copy File Name And Content",
         "category": "Explorer"
       },
       {
         "command": "llamachat.copyOneFile",
-        "title": "llamaChat: Copy Active File Name And Content"
+        "title": "LLM Code Copier: Copy Active File Name And Content"
       },
       {
         "command": "llamachat.copySelectedText",
-        "title": "llamaChat: Copy Selected Text"
+        "title": "LLM Code Copier: Copy Selected Text"
       },
       {
         "command": "llamachat.copyFolderContent",
-        "title": "llamaChat: Copy Folder Content Recursively",
+        "title": "LLM Code Copier: Copy Folder Content Recursively",
         "category": "Explorer"
       },
       {
         "command": "llamachat.copyAllOpenFiles",
-        "title": "llamaChat: Copy All Open Files Content",
+        "title": "LLM Code Copier: Copy All Open Files Content",
         "category": "File"
       }
     ],
     "configuration": {
-      "title": "LlamaChat Configuration",
+      "title": "LLM Code Copier Configuration",
       "properties": {
         "llamachat.includePromptFile": {
           "type": "boolean",
