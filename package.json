@@ -4,7 +4,7 @@
   "displayName": "LLM Code Copier",
   "description": "Copy code snippets and files for LLM interactions, or general code copying needs.",
   "version": "0.0.10",
-  "repository": "https://github.com/picasso250/vscode-llamachat",
+  "repository": "https://github.com/picasso250/vscode-copyfiles",
   "engines": {
     "vscode": "^1.88.0"
   },

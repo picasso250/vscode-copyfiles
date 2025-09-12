@@ -1,71 +1,57 @@
-# llamachat README
+### LLM Code Copier
 
-Copy Files 是一个用于 Visual Studio Code 的扩展，可以将文件名和内容复制到剪贴板。
+这是一个为 VS Code 设计的扩展，旨在简化代码片段和文件内容的复制过程，特别针对与大型语言模型（LLM）的交互场景进行了优化。它允许用户以结构化的方式，快速将选定的代码、文件内容、甚至整个文件夹内容复制到剪贴板，并可选择性地在复制内容前包含一个根目录下的 `prompt.txt` 文件的内容。
 
-## Features
+### 特性 (Features)
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+该扩展提供了以下功能：
 
-For example if there is an image subfolder under your extension project workspace:
+1.  **复制选定文本 (Copy Selected Text)**
+    *   **描述**: 将当前编辑器中选定的文本复制到剪贴板。在复制前，如果配置启用，会优先包含工作区根目录下的 `prompt.txt` 内容。
+    *   **触发方式**: 在编辑器中选中代码后，右键点击选择 "LLM Code Copier: Copy Selected Text"。
 
-\!\[feature X\]\(images/feature-x.png\)
+2.  **复制当前活动文件内容 (Copy Active File Name And Content)**
+    *   **描述**: 将当前活动编辑器的文件内容（包括文件名和路径）以 `---FILE: <路径>---` 的格式复制到剪贴板。对于未保存的无标题文件，则只复制其内容。同样支持在前面包含 `prompt.txt` 内容。
+    *   **触发方式**: 在编辑器中右键点击选择 "LLM Code Copier: Copy Active File Name And Content"。
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+3.  **复制选定文件内容 (Copy File Name And Content)**
+    *   **描述**: 从文件资源管理器中选择一个或多个文件，将它们的名称、相对路径和内容以 `---FILE: <路径>---` 的格式复制。此命令非常适合将多个相关文件一次性提供给 LLM。
+    *   **触发方式**: 在文件资源管理器中选中文件后，右键点击选择 "LLM Code Copier: Copy File Name And Content"。
 
-## Requirements
+4.  **递归复制文件夹内容 (Copy Folder Content Recursively)**
+    *   **描述**: 复制选定文件夹及其所有子文件夹中文件的内容。每个文件都将以 `---FILE: <相对路径>---` 的格式呈现。这个功能在向 LLM 提供整个项目或模块的上下文时特别有用。为了避免循环，此功能会跳过位于被复制文件夹内的 `prompt.txt` 文件，但会包含工作区根目录下的 `prompt.txt`。
+    *   **触发方式**: 在文件资源管理器中选中文件夹后，右键点击选择 "LLM Code Copier: Copy Folder Content Recursively"。
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+5.  **复制所有已打开文件内容 (Copy All Open Files Content)**
+    *   **描述**: 将所有当前在 VS Code 中打开的、基于文件系统的文档（非无标题文件）的内容复制到剪贴板。每个文件都将以 `---FILE: <相对路径>---` 的格式呈现。
+    *   **触发方式**: 通过 VS Code 菜单：`文件 (File)` -> `LLM Code Copier: Copy All Open Files Content`。
 
-## Extension Settings
+### 配置 (Configuration)
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+该扩展提供一个配置选项，允许用户控制是否在复制内容前包含 `prompt.txt`。
 
-For example:
+*   `llamachat.includePromptFile`:
+    *   **类型**: `boolean`
+    *   **默认值**: `true`
+    *   **描述**: 是否在复制内容的开头包含工作区根目录下的 `prompt.txt` 文件的内容。如果启用且 `prompt.txt` 存在，其内容将被添加到剪贴板内容的顶部。
 
-This extension contributes the following settings:
+您可以在 VS Code 的设置 (Ctrl+, 或 Cmd+,) 中搜索 "LLM Code Copier" 来修改此配置。
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+### 用法 (Usage)
 
-## Known Issues
+安装扩展后，您可以通过以下方式使用其功能：
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+1.  **右键菜单**: 在编辑器中选中文本或在文件资源管理器中选中文件/文件夹，然后右键点击，从上下文菜单中选择相应的 "LLM Code Copier" 命令。
+2.  **命令面板**: 打开命令面板 (Ctrl+Shift+P 或 Cmd+Shift+P)，然后搜索 "LLM Code Copier"，选择您想要执行的命令。
+3.  **文件菜单**: 对于 "Copy All Open Files Content" 命令，可以通过 `文件 (File)` 菜单访问。
 
-## Release Notes
+### 安装 (Installation)
 
-Users appreciate release notes as you update your extension.
+1.  打开 VS Code。
+2.  进入扩展视图 (快捷键 `Ctrl+Shift+X` 或 `Cmd+Shift+X`)。
+3.  搜索 "LLM Code Copier"。
+4.  点击安装。
 
-### 1.0.0
+### 仓库 (Repository)
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+您可以在 GitHub 上找到此扩展的源代码：[https://github.com/picasso250/vscode-copyfiles](https://github.com/picasso250/vscode-copyfiles)
