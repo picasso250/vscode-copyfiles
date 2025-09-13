@@ -70,7 +70,7 @@ function formatFileContentForClipboard(fileUri: vscode.Uri, fileContent: string)
  * @returns A formatted string of the prompt.txt content, or an empty string if not found, disabled, or an error occurs.
  */
 async function getPromptFileContent(): Promise<string> {
-    const config = vscode.workspace.getConfiguration('llamachat');
+    const config = vscode.workspace.getConfiguration('llmCopier');
     const includePromptFile = config.get<boolean>('includePromptFile', true);
 
     if (!includePromptFile) {
@@ -100,10 +100,99 @@ async function getPromptFileContent(): Promise<string> {
     return '';
 }
 
+/**
+ * Updates the 'root_folder' setting in the specified config.json file.
+ * Reads the JSON file, modifies the 'root_folder' key, and writes it back.
+ * Handles cases where the file, or key do not exist.
+ */
+async function updateRootFolderInConfig() {
+    const config = vscode.workspace.getConfiguration('llmCopier');
+    // NOTE: The user specified 'AutoApplyConfigFile' to point to config.json
+    // We will derive the full path from the VS Code setting.
+    const configFilePath = config.get<string>('autoApplyConfigFile');
+
+    if (!configFilePath) {
+        // Configuration file path not set, feature disabled.
+        console.warn('[AutoCodeApplier] "llmCopier.autoApplyConfigFile" is not set. Root folder sync will not occur.');
+        return;
+    }
+
+    const absConfigFilePath = path.resolve(configFilePath);
+    const configDir = path.dirname(absConfigFilePath);
+
+    // Ensure the directory for the config file exists
+    try {
+        await fs.promises.mkdir(configDir, { recursive: true });
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to create directory for config file: ${configDir}. Error: ${error}`);
+        console.error(`[AutoCodeApplier] Failed to create directory ${configDir}:`, error);
+        return;
+    }
+
+    let currentRootFolder = '';
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+        // Use the first workspace folder as the project root
+        currentRootFolder = workspaceFolders[0].uri.fsPath;
+    }
+
+    let configData: { root_folder?: string } = {}; // Use an interface or type for better safety if config grows
+    let fileContent = '';
+
+    try {
+        fileContent = await fs.promises.readFile(absConfigFilePath, 'utf8');
+        if (fileContent.trim()) { // Only try to parse if file is not empty
+            configData = JSON.parse(fileContent);
+        }
+    } catch (error: any) {
+        if (error.code !== 'ENOENT') { // Ignore file not found, we'll create it or overwrite
+            vscode.window.showErrorMessage(`Failed to read config file: ${absConfigFilePath}. Error: ${error}`);
+            console.error(`[AutoCodeApplier] Failed to read config file ${absConfigFilePath}:`, error);
+            // We'll proceed with an empty configData object
+        }
+    }
+
+    // Update the root_folder
+    if (configData.root_folder !== currentRootFolder) {
+        configData.root_folder = currentRootFolder;
+        try {
+            // Write back with 2-space indentation for readability
+            await fs.promises.writeFile(absConfigFilePath, JSON.stringify(configData, null, 2), 'utf8');
+            console.log(`[AutoCodeApplier] Updated root_folder in ${absConfigFilePath} to: ${currentRootFolder}`);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to write to config file: ${absConfigFilePath}. Error: ${error}`);
+            console.error(`[AutoCodeApplier] Failed to write config file ${absConfigFilePath}:`, error);
+        }
+    } else {
+        console.log(`[AutoCodeApplier] root_folder in ${absConfigFilePath} is already up-to-date.`);
+    }
+}
+
+
 export function activate(context: vscode.ExtensionContext) {
 
+    // --- New: Auto-update root folder in config.json ---
+    // Initial call when extension activates
+    updateRootFolderInConfig();
+
+    // Listen for workspace folder changes (e.g., opening a new folder, adding/removing a multi-root folder)
+    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(e => {
+        console.log('[AutoCodeApplier] Workspace folders changed, updating config.json...');
+        updateRootFolderInConfig();
+    }));
+
+    // Listen for configuration changes, specifically if the config file path itself changes
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('llmCopier.autoApplyConfigFile')) {
+            console.log('[AutoCodeApplier] Auto apply config file path changed, updating config.json...');
+            updateRootFolderInConfig();
+        }
+    }));
+    // --- End New: Auto-update root folder ---
+
+
     // Command: Copy selected files' names and content
-    let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('llamachat.copyFileNamesAndContent', async (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
+    let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('llmCopier.copyFileNamesAndContent', async (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
         let filesToCopy: vscode.Uri[] = [];
         if (selectedFiles && selectedFiles.length > 0) {
              // Filter out directories if any are mistakenly passed.
@@ -144,7 +233,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Command: Copy content of the currently active file
-    let copyOneFileDisposable = vscode.commands.registerCommand('llamachat.copyOneFile', async () => {
+    let copyOneFileDisposable = vscode.commands.registerCommand('llmCopier.copyOneFile', async () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage('No active editor.');
@@ -192,7 +281,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Command: Copy selected text from the active editor
-    let copySelectedTextDisposable = vscode.commands.registerCommand('llamachat.copySelectedText', async () => {
+    let copySelectedTextDisposable = vscode.commands.registerCommand('llmCopier.copySelectedText', async () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage('No active editor.');
@@ -256,7 +345,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     // Command: Copy entire folder content recursively
-    let copyFolderContentDisposable = vscode.commands.registerCommand('llamachat.copyFolderContent', async (folderUri: vscode.Uri) => {
+    let copyFolderContentDisposable = vscode.commands.registerCommand('llmCopier.copyFolderContent', async (folderUri: vscode.Uri) => {
         if (!folderUri) {
             vscode.window.showErrorMessage('No folder selected.');
             return;
@@ -301,7 +390,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // NEW Command: Copy content of all currently open files
-    let copyAllOpenFilesDisposable = vscode.commands.registerCommand('llamachat.copyAllOpenFiles', async () => {
+    let copyAllOpenFilesDisposable = vscode.commands.registerCommand('llmCopier.copyAllOpenFiles', async () => {
         const openFilesToCopy: string[] = [];
 
         const promptContent = await getPromptFileContent();

@@ -17,49 +17,49 @@
     "menus": {
       "editor/context": [
         {
-          "command": "llamachat.copySelectedText",
-          "group": "llamachat_commands@1",
+          "command": "llmCopier.copySelectedText",
+          "group": "llmCopier_commands@1",
           "when": "editorHasSelection"
         },
         {
-          "command": "llamachat.copyOneFile",
-          "group": "llamachat_commands@2"
+          "command": "llmCopier.copyOneFile",
+          "group": "llmCopier_commands@2"
         }
       ],
       "explorer/context": [
         {
-          "command": "llamachat.copyFileNamesAndContent",
-          "group": "llamachat_commands@1",
+          "command": "llmCopier.copyFileNamesAndContent",
+          "group": "llmCopier_commands@1",
           "when": "resourceExtname =~ /\\.(ts|js|py|java|cpp|h|md|json|yml|yaml|xml|html|css|scss|less|go|rs|php|rb|swift|kt|kts|groovy|clj|cljs|lua|nim|r|sh|bat|cmd|ps1|psm1|f90|f|for|f77|vb|vbs|vba|sql|c|cs|csproj|sln)$/i || resourceScheme == 'file' && !resourceIsFolder"
         },
         {
-          "command": "llamachat.copyFolderContent",
-          "group": "llamachat_commands@2",
+          "command": "llmCopier.copyFolderContent",
+          "group": "llmCopier_commands@2",
           "when": "explorerResourceIsFolder"
         }
       ]
     },
     "commands": [
       {
-        "command": "llamachat.copyFileNamesAndContent",
+        "command": "llmCopier.copyFileNamesAndContent",
         "title": "LLM Code Copier: Copy File Name And Content",
         "category": "Explorer"
       },
       {
-        "command": "llamachat.copyOneFile",
+        "command": "llmCopier.copyOneFile",
         "title": "LLM Code Copier: Copy Active File Name And Content"
       },
       {
-        "command": "llamachat.copySelectedText",
+        "command": "llmCopier.copySelectedText",
         "title": "LLM Code Copier: Copy Selected Text"
       },
       {
-        "command": "llamachat.copyFolderContent",
+        "command": "llmCopier.copyFolderContent",
         "title": "LLM Code Copier: Copy Folder Content Recursively",
         "category": "Explorer"
       },
       {
-        "command": "llamachat.copyAllOpenFiles",
+        "command": "llmCopier.copyAllOpenFiles",
         "title": "LLM Code Copier: Copy All Open Files Content",
         "category": "File"
       }
@@ -67,10 +67,15 @@
     "configuration": {
       "title": "LLM Code Copier Configuration",
       "properties": {
-        "llamachat.includePromptFile": {
+        "llmCopier.includePromptFile": {
           "type": "boolean",
           "default": true,
           "description": "Whether to include the content of 'prompt.txt' from the workspace root at the beginning of copied content."
+        },
+        "llmCopier.autoApplyConfigFile": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the AutoCodeApplier's config.ini file. If set, the current workspace root will be automatically written to this file's [Settings].root_folder. Leave empty to disable."
         }
       }
     }
