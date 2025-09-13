@@ -81,7 +81,12 @@
         "llmCopier.includePromptFile": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to include the content of 'prompt.txt' from the workspace root at the beginning of copied content."
+          "description": "Whether to include the content of 'prompt.txt' from the workspace root at the beginning of copied content. If false, no prompt.txt (neither project nor global) will be included."
+        },
+        "llmCopier.globalPromptFilePath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to a global 'prompt.txt' file. If 'includePromptFile' is true and no 'prompt.txt' is found in the project root, this global file will be used. Leave empty to disable."
         },
         "llmCopier.autoApplyConfigFile": {
           "type": "string",

@@ -66,39 +66,61 @@ function formatFileContentForClipboard(fileUri: vscode.Uri, fileContent: string)
 }
 
 /**
- * Reads the content of 'prompt.txt' from the workspace root if enabled by configuration.
+ * Reads the content of 'prompt.txt' based on configuration and priority.
+ * 1. Checks 'llmCopier.includePromptFile'. If false, returns empty string.
+ * 2. If true, attempts to read 'prompt.txt' from the workspace root.
+ * 3. If workspace 'prompt.txt' is not found or fails to read, attempts to read from 'llmCopier.globalPromptFilePath'.
  * @returns A formatted string of the prompt.txt content, or an empty string if not found, disabled, or an error occurs.
  */
 async function getPromptFileContent(): Promise<string> {
     const config = vscode.workspace.getConfiguration('llmCopier');
     const includePromptFile = config.get<boolean>('includePromptFile', true);
+    const globalPromptFilePath = config.get<string>('globalPromptFilePath', '');
 
+    // If 'includePromptFile' is false, exit early
     if (!includePromptFile) {
         return '';
     }
 
-    // Get the first workspace folder. If there are multiple, we assume the first one is the main project root.
+    let content = '';
+
+    // 1. Try to read project-level prompt.txt (higher priority)
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-        return ''; // No workspace open
-    }
-
-    const rootUri = workspaceFolders[0].uri;
-    const promptFilePath = path.join(rootUri.fsPath, 'prompt.txt');
-
-    try {
-        const fileStat = await vscode.workspace.fs.stat(vscode.Uri.file(promptFilePath));
-        if (fileStat.type === vscode.FileType.File) {
-            const contentBuffer = await vscode.workspace.fs.readFile(vscode.Uri.file(promptFilePath));
-            const content = Buffer.from(contentBuffer).toString('utf8');
-            return `${content}\n\n`;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+        const rootUri = workspaceFolders[0].uri;
+        const projectPromptFilePath = path.join(rootUri.fsPath, 'prompt.txt');
+        try {
+            const fileStat = await vscode.workspace.fs.stat(vscode.Uri.file(projectPromptFilePath));
+            if (fileStat.type === vscode.FileType.File) {
+                const contentBuffer = await vscode.workspace.fs.readFile(vscode.Uri.file(projectPromptFilePath));
+                content = Buffer.from(contentBuffer).toString('utf8');
+                // If project prompt.txt found, return it immediately
+                return `${content}\n\n`;
+            }
+        } catch (error) {
+            // File not found or other read error, silently ignore and proceed to global path
+            // console.warn(`Could not read project prompt.txt at ${projectPromptFilePath}: ${error}`);
         }
-    } catch (error) {
-        // File not found or other read error, silently ignore as it's an optional feature
-        // console.warn(`Could not read prompt.txt at ${promptFilePath}: ${error}`);
     }
-    return '';
+
+    // 2. If project prompt.txt was not found or read, try to read global prompt.txt
+    if (globalPromptFilePath) {
+        const absGlobalPromptFilePath = path.resolve(globalPromptFilePath); // Resolve to absolute path
+        try {
+            const fileStat = await vscode.workspace.fs.stat(vscode.Uri.file(absGlobalPromptFilePath));
+            if (fileStat.type === vscode.FileType.File) {
+                const contentBuffer = await vscode.workspace.fs.readFile(vscode.Uri.file(absGlobalPromptFilePath));
+                content = Buffer.from(contentBuffer).toString('utf8');
+            }
+        } catch (error) {
+            console.error(`Failed to read global prompt.txt at ${absGlobalPromptFilePath}: ${error}`);
+            vscode.window.showWarningMessage(`Could not read global prompt file configured at "${globalPromptFilePath}". Check path and permissions.`);
+        }
+    }
+
+    return content ? `${content}\n\n` : '';
 }
+
 
 /**
  * Updates the 'root_folder' setting in the specified config.json file.
@@ -324,6 +346,7 @@ export function activate(context: vscode.ExtensionContext) {
             for (const [name, type] of entries) {
                 const entryUri = vscode.Uri.joinPath(folderUri, name);
                 // Exclude prompt.txt itself from recursive folder copy if it's within the copied folder
+                // (Note: The prompt.txt inclusion is handled by getPromptFileContent at the top level of commands)
                 if (name === 'prompt.txt' && entryUri.fsPath === path.join(folderUri.fsPath, 'prompt.txt')) {
                     continue; 
                 }
