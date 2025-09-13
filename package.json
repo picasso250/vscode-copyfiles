@@ -37,6 +37,12 @@
           "group": "llmCopier_commands@2",
           "when": "explorerResourceIsFolder"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "llmCopier.updateRootFolderConfig",
+          "when": "always"
+        }
       ]
     },
     "commands": [
@@ -61,6 +67,11 @@
       {
         "command": "llmCopier.copyAllOpenFiles",
         "title": "LLM Code Copier: Copy All Open Files Content",
+        "category": "File"
+      },
+      {
+        "command": "llmCopier.updateRootFolderConfig",
+        "title": "LLM Code Copier: Update AutoCodeApplier Root Folder Config",
         "category": "File"
       }
     ],

@@ -113,6 +113,7 @@ async function updateRootFolderInConfig() {
 
     if (!configFilePath) {
         // Configuration file path not set, feature disabled.
+        vscode.window.showWarningMessage('llmCopier.autoApplyConfigFile is not set. Root folder sync will not occur.');
         console.warn('[AutoCodeApplier] "llmCopier.autoApplyConfigFile" is not set. Root folder sync will not occur.');
         return;
     }
@@ -159,12 +160,14 @@ async function updateRootFolderInConfig() {
             // Write back with 2-space indentation for readability
             await fs.promises.writeFile(absConfigFilePath, JSON.stringify(configData, null, 2), 'utf8');
             console.log(`[AutoCodeApplier] Updated root_folder in ${absConfigFilePath} to: ${currentRootFolder}`);
+            vscode.window.showInformationMessage(`AutoCodeApplier config updated: root_folder set to ${currentRootFolder}`);
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to write to config file: ${absConfigFilePath}. Error: ${error}`);
             console.error(`[AutoCodeApplier] Failed to write config file ${absConfigFilePath}:`, error);
         }
     } else {
         console.log(`[AutoCodeApplier] root_folder in ${absConfigFilePath} is already up-to-date.`);
+        vscode.window.showInformationMessage('AutoCodeApplier config: root_folder is already up-to-date.');
     }
 }
 
@@ -309,7 +312,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     /**
      * Recursively reads files within a folder and formats their content.
-     * The path for each file is relative to its project root (or absolute if not in a workspace).
+     * The path for each file is relative to its project root (或 absolute if not in a workspace).
      * @param folderUri The URI of the folder to read.
      * @returns A promise that resolves to an array of formatted file content strings.
      */
@@ -422,12 +425,20 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // NEW Command: Manually trigger updateRootFolderInConfig
+    let updateRootFolderConfigDisposable = vscode.commands.registerCommand('llmCopier.updateRootFolderConfig', async () => {
+        vscode.window.showInformationMessage('Updating AutoCodeApplier root folder configuration...');
+        await updateRootFolderInConfig();
+    });
+
+
     context.subscriptions.push(
         copySelectedTextDisposable,
         copyFileNamesAndContentDisposable,
         copyOneFileDisposable,
         copyFolderContentDisposable,
-        copyAllOpenFilesDisposable
+        copyAllOpenFilesDisposable,
+        updateRootFolderConfigDisposable // Add the new disposable here
     );
 }
 
