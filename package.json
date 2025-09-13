@@ -42,6 +42,10 @@
         {
           "command": "llmCopier.updateRootFolderConfig",
           "when": "always"
+        },
+        {
+          "command": "llmCopier.toggleIncludePromptFile",
+          "when": "always"
         }
       ]
     },
@@ -73,6 +77,11 @@
         "command": "llmCopier.updateRootFolderConfig",
         "title": "LLM Code Copier: Update AutoCodeApplier Root Folder Config",
         "category": "File"
+      },
+      {
+        "command": "llmCopier.toggleIncludePromptFile",
+        "title": "LLM Code Copier: Toggle 'Include prompt.txt' Setting",
+        "category": "Settings"
       }
     ],
     "configuration": {

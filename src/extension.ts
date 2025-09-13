@@ -490,6 +490,18 @@ export function activate(context: vscode.ExtensionContext) {
         await updateRootFolderInConfig();
     });
 
+    // NEW Command: Toggle 'llmCopier.includePromptFile' setting
+    let toggleIncludePromptFileDisposable = vscode.commands.registerCommand('llmCopier.toggleIncludePromptFile', async () => {
+        const config = vscode.workspace.getConfiguration('llmCopier');
+        const currentSetting = config.get<boolean>('includePromptFile', true);
+        const newSetting = !currentSetting;
+
+        // Update the setting globally (or use ConfigurationTarget.Workspace if preferred)
+        await config.update('includePromptFile', newSetting, vscode.ConfigurationTarget.Global);
+
+        vscode.window.showInformationMessage(`'Include prompt.txt' is now set to: ${newSetting}`);
+    });
+
 
     context.subscriptions.push(
         copySelectedTextDisposable,
@@ -497,7 +509,8 @@ export function activate(context: vscode.ExtensionContext) {
         copyOneFileDisposable,
         copyFolderContentDisposable,
         copyAllOpenFilesDisposable,
-        updateRootFolderConfigDisposable // Add the new disposable here
+        updateRootFolderConfigDisposable,
+        toggleIncludePromptFileDisposable // Add the new disposable here
     );
 }
 
