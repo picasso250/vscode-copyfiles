@@ -219,11 +219,25 @@ export function activate(context: vscode.ExtensionContext) {
     // Command: Copy selected files' names and content
     let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('llmCopier.copyFileNamesAndContent', async (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
         let filesToCopy: vscode.Uri[] = [];
+        let itemsToCheck: vscode.Uri[] = [];
+
         if (selectedFiles && selectedFiles.length > 0) {
-             // Filter out directories if any are mistakenly passed.
-            filesToCopy = selectedFiles.filter(uri => fs.existsSync(uri.fsPath) && fs.statSync(uri.fsPath).isFile());
-        } else if (currentFile && fs.existsSync(currentFile.fsPath) && fs.statSync(currentFile.fsPath).isFile()) {
-            filesToCopy = [currentFile];
+            itemsToCheck = selectedFiles;
+        } else if (currentFile) {
+            itemsToCheck = [currentFile];
+        }
+
+        for (const uri of itemsToCheck) {
+            try {
+                // Use async fs.promises.stat
+                const stats = await fs.promises.stat(uri.fsPath);
+                if (stats.isFile()) {
+                    filesToCopy.push(uri);
+                }
+            } catch (error) {
+                console.error(`Could not access file ${uri.fsPath}: ${error}`);
+                vscode.window.showWarningMessage(`Could not access selected item "${path.basename(uri.fsPath)}".`);
+            }
         }
 
         if (filesToCopy.length === 0) {
@@ -239,7 +253,8 @@ export function activate(context: vscode.ExtensionContext) {
 
         for (const fileUri of filesToCopy) {
             try {
-                const fileContent = fs.readFileSync(fileUri.fsPath, 'utf-8');
+                // Use async fs.promises.readFile
+                const fileContent = await fs.promises.readFile(fileUri.fsPath, 'utf-8');
                 clipboardContent.push(formatFileContentForClipboard(fileUri, fileContent));
             } catch (error) {
                 console.error(`Failed to read file ${fileUri.fsPath}: ${error}`);
@@ -249,7 +264,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (clipboardContent.length > 0) {
             await vscode.env.clipboard.writeText(clipboardContent.join(''));
-            let numFilesCopied = filesToCopy.length; // Count only actual files, not the prompt.txt
+            let numFilesCopied = filesToCopy.length;
             let message = `Copied ${numFilesCopied} file${numFilesCopied > 1 ? 's' : ''} to clipboard.`;
             vscode.window.showInformationMessage(message);
         } else {
@@ -269,7 +284,6 @@ export function activate(context: vscode.ExtensionContext) {
             const document = editor.document;
             const fileUri = document.uri;
             const fileContent = document.getText();
-            let clipboardContent: string;
             let message: string;
 
             const promptContent = await getPromptFileContent();
@@ -353,8 +367,9 @@ export function activate(context: vscode.ExtensionContext) {
 
                 if (type === vscode.FileType.File) {
                     try {
-                        const fileContent = fs.readFileSync(entryUri.fsPath, 'utf-8');
-                        contents.push(formatFileContentForClipboard(entryUri, fileContent.toString()));
+                        // Changed to async read
+                        const fileContent = await fs.promises.readFile(entryUri.fsPath, 'utf8');
+                        contents.push(formatFileContentForClipboard(entryUri, fileContent));
                     } catch (fileReadError) {
                         console.error(`Failed to read file ${entryUri.fsPath}: ${fileReadError}`);
                         vscode.window.showWarningMessage(`Could not read file ${name} in ${folderUri.fsPath}.`);
@@ -371,46 +386,67 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     // Command: Copy entire folder content recursively
-    let copyFolderContentDisposable = vscode.commands.registerCommand('llmCopier.copyFolderContent', async (folderUri: vscode.Uri) => {
-        if (!folderUri) {
-            vscode.window.showErrorMessage('No folder selected.');
+    let copyFolderContentDisposable = vscode.commands.registerCommand('llmCopier.copyFolderContent', async (contextUri: vscode.Uri, selectedUris: vscode.Uri[]) => {
+        let foldersToCopy: vscode.Uri[] = [];
+
+        // Prioritize selectedUris if available, otherwise fall back to contextUri
+        if (selectedUris && selectedUris.length > 0) {
+            foldersToCopy = selectedUris;
+        } else if (contextUri) {
+            foldersToCopy = [contextUri];
+        }
+
+        if (foldersToCopy.length === 0) {
+            vscode.window.showErrorMessage('No folders selected.');
             return;
         }
 
-        // Ensure the URI points to a directory
-        try {
-            const stats = fs.statSync(folderUri.fsPath);
-            if (!stats.isDirectory()) {
-                vscode.window.showErrorMessage('The selected item is not a folder. Please select a folder to copy its contents.');
-                return;
+        let allFilesCount = 0;
+        const allClipboardContent: string[] = [];
+        const promptContent = await getPromptFileContent();
+        if (promptContent) {
+            allClipboardContent.push(promptContent);
+        }
+
+        // Filter out non-directories and process each folder
+        const validFolders = await Promise.all(foldersToCopy.map(async (uri) => {
+            try {
+                // Use async fs.promises.stat
+                const stats = await fs.promises.stat(uri.fsPath);
+                return stats.isDirectory() ? uri : null;
+            } catch (error) {
+                console.error(`Could not access "${uri.fsPath}": ${error}`);
+                vscode.window.showWarningMessage(`Could not access selected item "${path.basename(uri.fsPath)}".`);
+                return null;
             }
-        } catch (error) {
-            vscode.window.showErrorMessage(`Could not access "${path.basename(folderUri.fsPath)}": ${error}`);
+        }));
+
+        const actualFoldersToProcess = validFolders.filter((uri): uri is vscode.Uri => uri !== null);
+
+        if (actualFoldersToProcess.length === 0) {
+            vscode.window.showInformationMessage('No valid folders found among selected items to copy.');
             return;
         }
 
-        vscode.window.withProgress({
+        await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: `Copying folder content from "${path.basename(folderUri.fsPath)}"`,
+            title: `Copying content from ${actualFoldersToProcess.length} folder(s)...`,
             cancellable: false
         }, async (progress) => {
-            progress.report({ message: 'Collecting files...' });
-            
-            const promptContent = await getPromptFileContent();
-            let allFileContents: string[] = [];
-            if (promptContent) {
-                allFileContents.push(promptContent);
+            for (const folderUri of actualFoldersToProcess) {
+                progress.report({ message: `Collecting files from "${path.basename(folderUri.fsPath)}"...` });
+                const folderFiles = await readFolderRecursively(folderUri);
+                allClipboardContent.push(...folderFiles);
+                allFilesCount += folderFiles.length;
             }
 
-            const folderFiles = await readFolderRecursively(folderUri);
-            allFileContents.push(...folderFiles);
-
-            if (allFileContents.length > 0) {
+            // Check if files were actually added beyond just the prompt
+            if (allClipboardContent.length > (promptContent ? 1 : 0) || (promptContent && allClipboardContent.length > 0)) {
                 progress.report({ message: 'Copying to clipboard...' });
-                await vscode.env.clipboard.writeText(allFileContents.join(''));
-                vscode.window.showInformationMessage(`Copied ${folderFiles.length} files from folder "${path.basename(folderUri.fsPath)}" to clipboard.`);
+                await vscode.env.clipboard.writeText(allClipboardContent.join(''));
+                vscode.window.showInformationMessage(`Copied ${allFilesCount} files from ${actualFoldersToProcess.length} folder${actualFoldersToProcess.length > 1 ? 's' : ''} to clipboard.`);
             } else {
-                vscode.window.showInformationMessage(`No files found in folder "${path.basename(folderUri.fsPath)}" to copy.`);
+                vscode.window.showInformationMessage(`No files found in selected folder(s) to copy.`);
             }
         });
     });
