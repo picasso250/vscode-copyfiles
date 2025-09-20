@@ -57,12 +57,12 @@ function getRelativePathString(fileUri: vscode.Uri, workspaceRootUri: vscode.Uri
  * The path is relative to the project root if the file is within a workspace, otherwise it's an absolute path.
  * @param fileUri The URI of the file.
  * @param fileContent The content of the file.
- * @returns A formatted string: "---FILE: <relative_or_absolute_path>---\n```\n{content}\n```\n\n"
+ * @returns A formatted string: "#### FILE: <relative_or_absolute_path>\n```\n{content}\n```\n\n"
  */
 function formatFileContentForClipboard(fileUri: vscode.Uri, fileContent: string): string {
     const workspaceRootUri = getWorkspaceRootForUri(fileUri);
     const pathString = getRelativePathString(fileUri, workspaceRootUri);
-    return `---FILE: ${pathString}---\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
+    return `#### FILE: ${pathString}\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
 }
 
 /**
@@ -196,7 +196,7 @@ async function updateRootFolderInConfig() {
 
 export function activate(context: vscode.ExtensionContext) {
 
-    // --- New: Auto-update root folder in config.json ---
+    // --- Auto-update root folder in config.json ---
     // Initial call when extension activates
     updateRootFolderInConfig();
 
@@ -213,7 +213,7 @@ export function activate(context: vscode.ExtensionContext) {
             updateRootFolderInConfig();
         }
     }));
-    // --- End New: Auto-update root folder ---
+    // --- End Auto-update root folder ---
 
 
     // Command: Copy selected files' names and content
@@ -451,7 +451,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    // NEW Command: Copy content of all currently open files
+    // Command: Copy content of all currently open files
     let copyAllOpenFilesDisposable = vscode.commands.registerCommand('llmCopier.copyAllOpenFiles', async () => {
         const openFilesToCopy: string[] = [];
 
@@ -484,13 +484,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // NEW Command: Manually trigger updateRootFolderInConfig
+    // Command: Manually trigger updateRootFolderInConfig
     let updateRootFolderConfigDisposable = vscode.commands.registerCommand('llmCopier.updateRootFolderConfig', async () => {
         vscode.window.showInformationMessage('Updating AutoCodeApplier root folder configuration...');
         await updateRootFolderInConfig();
     });
 
-    // NEW Command: Toggle 'llmCopier.includePromptFile' setting
+    // Command: Toggle 'llmCopier.includePromptFile' setting
     let toggleIncludePromptFileDisposable = vscode.commands.registerCommand('llmCopier.toggleIncludePromptFile', async () => {
         const config = vscode.workspace.getConfiguration('llmCopier');
         const currentSetting = config.get<boolean>('includePromptFile', true);
@@ -510,7 +510,7 @@ export function activate(context: vscode.ExtensionContext) {
         copyFolderContentDisposable,
         copyAllOpenFilesDisposable,
         updateRootFolderConfigDisposable,
-        toggleIncludePromptFileDisposable // Add the new disposable here
+        toggleIncludePromptFileDisposable
     );
 }
 

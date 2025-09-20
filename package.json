@@ -42,10 +42,6 @@
         {
           "command": "llmCopier.updateRootFolderConfig",
           "when": "always"
-        },
-        {
-          "command": "llmCopier.toggleIncludePromptFile",
-          "when": "always"
         }
       ]
     },
