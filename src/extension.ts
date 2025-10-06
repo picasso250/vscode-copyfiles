@@ -3,6 +3,52 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
+ * Checks if a file is likely a binary file by inspecting its first bytes for null characters.
+ * This is a heuristic and not 100% foolproof but effective for most common cases.
+ * @param fileUri The URI of the file to check.
+ * @returns A promise that resolves to true if the file is likely binary, false otherwise.
+ */
+async function isLikelyBinary(fileUri: vscode.Uri): Promise<boolean> {
+    // This check is only for filesystem files.
+    if (fileUri.scheme !== 'file') {
+        return false;
+    }
+
+    const filePath = fileUri.fsPath;
+    const chunk_size = 1024; // Read the first 1KB, which is sufficient for this heuristic.
+    const buffer = new Uint8Array(chunk_size); // Use Uint8Array to satisfy the type requirement.
+    let fileHandle: fs.promises.FileHandle | undefined;
+
+    try {
+        fileHandle = await fs.promises.open(filePath, 'r');
+        const { bytesRead } = await fileHandle.read(buffer, 0, chunk_size, 0);
+
+        // An empty file is not binary.
+        if (bytesRead === 0) {
+            return false;
+        }
+
+        // Check for the existence of a null byte, which is a strong indicator of a binary file.
+        // Most text file encodings (like ASCII, UTF-8) do not use null bytes for character representation.
+        for (let i = 0; i < bytesRead; i++) {
+            if (buffer[i] === 0) {
+                return true; // Null byte found, highly likely a binary file.
+            }
+        }
+
+        return false; // No null bytes found in the initial chunk.
+    } catch (error) {
+        console.error(`Error checking if file is binary: ${filePath}. Assuming it is.`, error);
+        // Be conservative: if we can't read it for some reason (e.g., permissions),
+        // it's safer to treat it as binary and skip it.
+        return true;
+    } finally {
+        await fileHandle?.close();
+    }
+}
+
+
+/**
  * Finds the most specific workspace folder URI that contains the given file URI.
  * @param fileUri The URI of the file.
  * @returns The URI of the containing workspace folder, or undefined if the file is not in any workspace.
@@ -218,30 +264,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Command: Copy selected files' names and content
     let copyFileNamesAndContentDisposable = vscode.commands.registerCommand('llmCopier.copyFileNamesAndContent', async (currentFile: vscode.Uri, selectedFiles: vscode.Uri[]) => {
-        let filesToCopy: vscode.Uri[] = [];
-        let itemsToCheck: vscode.Uri[] = [];
+        let filesToProcess: vscode.Uri[] = [];
 
         if (selectedFiles && selectedFiles.length > 0) {
-            itemsToCheck = selectedFiles;
+            filesToProcess = selectedFiles;
         } else if (currentFile) {
-            itemsToCheck = [currentFile];
+            filesToProcess = [currentFile];
         }
 
-        for (const uri of itemsToCheck) {
-            try {
-                // Use async fs.promises.stat
-                const stats = await fs.promises.stat(uri.fsPath);
-                if (stats.isFile()) {
-                    filesToCopy.push(uri);
-                }
-            } catch (error) {
-                console.error(`Could not access file ${uri.fsPath}: ${error}`);
-                vscode.window.showWarningMessage(`Could not access selected item "${path.basename(uri.fsPath)}".`);
-            }
-        }
-
-        if (filesToCopy.length === 0) {
-            vscode.window.showInformationMessage('No files selected or found to copy.');
+        if (filesToProcess.length === 0) {
+            vscode.window.showInformationMessage('No valid items selected to copy.');
             return;
         }
 
@@ -251,9 +283,32 @@ export function activate(context: vscode.ExtensionContext) {
             clipboardContent.push(promptContent);
         }
 
+        let filesToCopy: vscode.Uri[] = [];
+        // Filter out binary files before processing
+        for (const uri of filesToProcess) {
+             try {
+                const stats = await fs.promises.stat(uri.fsPath);
+                if (stats.isFile()) {
+                    if (await isLikelyBinary(uri)) {
+                        vscode.window.showWarningMessage(`Skipped binary file: ${path.basename(uri.fsPath)}`);
+                    } else {
+                        filesToCopy.push(uri);
+                    }
+                }
+            } catch (error) {
+                console.error(`Could not access file ${uri.fsPath}: ${error}`);
+                vscode.window.showWarningMessage(`Could not access selected item "${path.basename(uri.fsPath)}".`);
+            }
+        }
+
+
+        if (filesToCopy.length === 0) {
+            vscode.window.showInformationMessage('No non-binary files were found to copy.');
+            return;
+        }
+
         for (const fileUri of filesToCopy) {
             try {
-                // Use async fs.promises.readFile
                 const fileContent = await fs.promises.readFile(fileUri.fsPath, 'utf-8');
                 clipboardContent.push(formatFileContentForClipboard(fileUri, fileContent));
             } catch (error) {
@@ -262,10 +317,11 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
-        if (clipboardContent.length > 0) {
+        // Only count files added after the optional prompt
+        const filesCopiedCount = clipboardContent.length - (promptContent ? 1 : 0);
+        if (filesCopiedCount > 0) {
             await vscode.env.clipboard.writeText(clipboardContent.join(''));
-            let numFilesCopied = filesToCopy.length;
-            let message = `Copied ${numFilesCopied} file${numFilesCopied > 1 ? 's' : ''} to clipboard.`;
+            let message = `Copied ${filesCopiedCount} file${filesCopiedCount > 1 ? 's' : ''} to clipboard.`;
             vscode.window.showInformationMessage(message);
         } else {
             vscode.window.showInformationMessage('No files were copied.');
@@ -283,6 +339,15 @@ export function activate(context: vscode.ExtensionContext) {
         try {
             const document = editor.document;
             const fileUri = document.uri;
+            
+            // For file system documents, perform a binary check
+            if (fileUri.scheme === 'file') {
+                 if (await isLikelyBinary(fileUri)) {
+                    vscode.window.showWarningMessage(`Skipped copying binary file: ${path.basename(fileUri.fsPath)}`);
+                    return;
+                }
+            }
+            
             const fileContent = document.getText();
             let message: string;
 
@@ -293,15 +358,12 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             if (fileUri.scheme === 'file') {
-                // It's a regular file on the file system
                 finalContentParts.push(formatFileContentForClipboard(fileUri, fileContent));
                 message = 'Copied one file to clipboard.';
             } else if (fileUri.scheme === 'untitled') {
-                // It's an unsaved untitled document, only copy content, no path for untitled
                 finalContentParts.push(`\`\`\`\n${fileContent}\n\`\`\`\n\n`);
                 message = 'Copied content of untitled file to clipboard.';
             } else {
-                // Handle other schemes (e.g., 'git', 'output', etc.)
                 vscode.window.showWarningMessage(`Cannot copy content from document with scheme "${fileUri.scheme}". Only file system or untitled documents are supported.`);
                 return;
             }
@@ -348,7 +410,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     /**
      * Recursively reads files within a folder and formats their content.
-     * The path for each file is relative to its project root (或 absolute if not in a workspace).
+     * Skips binary files based on content inspection.
      * @param folderUri The URI of the folder to read.
      * @returns A promise that resolves to an array of formatted file content strings.
      */
@@ -359,15 +421,18 @@ export function activate(context: vscode.ExtensionContext) {
 
             for (const [name, type] of entries) {
                 const entryUri = vscode.Uri.joinPath(folderUri, name);
-                // Exclude prompt.txt itself from recursive folder copy if it's within the copied folder
-                // (Note: The prompt.txt inclusion is handled by getPromptFileContent at the top level of commands)
+                
                 if (name === 'prompt.txt' && entryUri.fsPath === path.join(folderUri.fsPath, 'prompt.txt')) {
                     continue; 
                 }
 
                 if (type === vscode.FileType.File) {
+                    if (await isLikelyBinary(entryUri)) {
+                        console.log(`Skipping binary file during recursive copy: ${entryUri.fsPath}`);
+                        vscode.window.showWarningMessage(`Skipped binary file: ${name}`);
+                        continue;
+                    }
                     try {
-                        // Changed to async read
                         const fileContent = await fs.promises.readFile(entryUri.fsPath, 'utf8');
                         contents.push(formatFileContentForClipboard(entryUri, fileContent));
                     } catch (fileReadError) {
@@ -389,7 +454,6 @@ export function activate(context: vscode.ExtensionContext) {
     let copyFolderContentDisposable = vscode.commands.registerCommand('llmCopier.copyFolderContent', async (contextUri: vscode.Uri, selectedUris: vscode.Uri[]) => {
         let foldersToCopy: vscode.Uri[] = [];
 
-        // Prioritize selectedUris if available, otherwise fall back to contextUri
         if (selectedUris && selectedUris.length > 0) {
             foldersToCopy = selectedUris;
         } else if (contextUri) {
@@ -408,10 +472,8 @@ export function activate(context: vscode.ExtensionContext) {
             allClipboardContent.push(promptContent);
         }
 
-        // Filter out non-directories and process each folder
         const validFolders = await Promise.all(foldersToCopy.map(async (uri) => {
             try {
-                // Use async fs.promises.stat
                 const stats = await fs.promises.stat(uri.fsPath);
                 return stats.isDirectory() ? uri : null;
             } catch (error) {
@@ -440,13 +502,12 @@ export function activate(context: vscode.ExtensionContext) {
                 allFilesCount += folderFiles.length;
             }
 
-            // Check if files were actually added beyond just the prompt
-            if (allClipboardContent.length > (promptContent ? 1 : 0) || (promptContent && allClipboardContent.length > 0)) {
+            if (allFilesCount > 0) {
                 progress.report({ message: 'Copying to clipboard...' });
                 await vscode.env.clipboard.writeText(allClipboardContent.join(''));
                 vscode.window.showInformationMessage(`Copied ${allFilesCount} files from ${actualFoldersToProcess.length} folder${actualFoldersToProcess.length > 1 ? 's' : ''} to clipboard.`);
             } else {
-                vscode.window.showInformationMessage(`No files found in selected folder(s) to copy.`);
+                vscode.window.showInformationMessage(`No readable, non-binary files found in selected folder(s) to copy.`);
             }
         });
     });
@@ -460,11 +521,13 @@ export function activate(context: vscode.ExtensionContext) {
             openFilesToCopy.push(promptContent);
         }
 
-        let actualFilesCopiedCount = 0; // Counter for actual files, excluding prompt.txt
-        // Iterate through all open TextDocuments
+        let actualFilesCopiedCount = 0;
         for (const document of vscode.workspace.textDocuments) {
-            // Only consider file system documents that are not untitled
             if (document.uri.scheme === 'file' && !document.isUntitled) {
+                if (await isLikelyBinary(document.uri)) {
+                     vscode.window.showWarningMessage(`Skipped open binary file: ${path.basename(document.uri.fsPath)}`);
+                     continue;
+                }
                 try {
                     const fileContent = document.getText();
                     openFilesToCopy.push(formatFileContentForClipboard(document.uri, fileContent));
@@ -476,11 +539,11 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
-        if (openFilesToCopy.length > 0) {
+        if (actualFilesCopiedCount > 0) {
             await vscode.env.clipboard.writeText(openFilesToCopy.join(''));
             vscode.window.showInformationMessage(`Copied ${actualFilesCopiedCount} open file${actualFilesCopiedCount > 1 ? 's' : ''} to clipboard.`);
         } else {
-            vscode.window.showInformationMessage('No open files found to copy.');
+            vscode.window.showInformationMessage('No open, non-binary files found to copy.');
         }
     });
 
@@ -496,7 +559,6 @@ export function activate(context: vscode.ExtensionContext) {
         const currentSetting = config.get<boolean>('includePromptFile', true);
         const newSetting = !currentSetting;
 
-        // Update the setting globally (or use ConfigurationTarget.Workspace if preferred)
         await config.update('includePromptFile', newSetting, vscode.ConfigurationTarget.Global);
 
         vscode.window.showInformationMessage(`'Include prompt.txt' is now set to: ${newSetting}`);

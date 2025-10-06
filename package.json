@@ -11,7 +11,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "menus": {
@@ -30,7 +32,7 @@
         {
           "command": "llmCopier.copyFileNamesAndContent",
           "group": "llmCopier_commands@1",
-          "when": "resourceExtname =~ /\\.(ts|js|py|java|cpp|h|md|json|yml|yaml|xml|html|css|scss|less|go|rs|php|rb|swift|kt|kts|groovy|clj|cljs|lua|nim|r|sh|bat|cmd|ps1|psm1|f90|f|for|f77|vb|vbs|vba|sql|c|cs|csproj|sln)$/i || resourceScheme == 'file' && !resourceIsFolder"
+          "when": "resourceScheme == 'file' && !resourceIsFolder && (resourceExtname =~ /\\.(ts|js|py|java|cpp|h|md|json|yml|yaml|xml|html|css|scss|less|go|rs|php|rb|swift|kt|kts|groovy|clj|cljs|lua|nim|r|sh|bat|cmd|ps1|psm1|f90|f|for|f77|vb|vbs|vba|sql|c|cs|csproj|sln)$/i || resourceExtname == '')"
         },
         {
           "command": "llmCopier.copyFolderContent",
